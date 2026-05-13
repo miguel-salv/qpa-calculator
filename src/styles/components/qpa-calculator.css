@@ -21,6 +21,44 @@
   opacity: 0.75;
 }
 
+.qpa-grading-mode {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qpa-grading-mode-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.qpa-grading-mode-hint {
+  font-size: 0.75rem;
+  color: var(--color-muted-foreground);
+  opacity: 0.85;
+  text-align: center;
+  max-width: 36rem;
+  line-height: 1.35;
+}
+
+.qpa-grading-radio {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.qpa-grading-radio-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .qpa-actions {
   margin-top: 1rem;
   display: flex;

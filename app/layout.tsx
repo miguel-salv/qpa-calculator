@@ -87,6 +87,13 @@ export default function RootLayout({
     operatingSystem: 'Web',
   };
 
+  const websiteStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'CMU QPA Calculator',
+    url: 'https://cmu-qpa.pages.dev/',
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -95,6 +102,10 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData) }}
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} root-body`}>

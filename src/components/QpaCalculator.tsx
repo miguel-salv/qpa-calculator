@@ -13,6 +13,8 @@ import { toast } from "@/hooks/use-toast"
 import { parseCMUTranscript } from '@/lib/utils';
 import { cn } from "@/lib/utils";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import '@/styles/components/qpa-calculator.css';
 
 interface Course {
@@ -29,22 +31,73 @@ interface Semester {
   isEditing?: boolean;
 }
 
-const gradePoints: { [key: string]: number | null } = {
-  "A": 4.0,
-  "B": 3.0,
-  "C": 2.0,
-  "D": 1.0,
-  "R": 0.0,
-  "NO_GRADE": null
+type GradingMode = "undergrad" | "graduate";
+
+const GRADING_MODE_STORAGE_KEY = "qpaGradingMode";
+
+/** CMU graduate QPA weights; A+ is capped at 4.0 (same as A). */
+const GRADUATE_GRADE_POINTS: Record<string, number> = {
+  "A+": 4.0,
+  A: 4.0,
+  "A-": 3.67,
+  "B+": 3.33,
+  B: 3.0,
+  "B-": 2.67,
+  "C+": 2.33,
+  C: 2.0,
+  D: 1.0,
+  R: 0.0,
+  F: 0.0,
 };
 
-const calculateSemesterGpa = (courses: Course[]): number => {
+const COURSE_GRADE_OPTIONS = [
+  { value: "NO_GRADE", label: "No Grade" },
+  { value: "A+", label: "A+" },
+  { value: "A", label: "A" },
+  { value: "A-", label: "A-" },
+  { value: "B+", label: "B+" },
+  { value: "B", label: "B" },
+  { value: "B-", label: "B-" },
+  { value: "C+", label: "C+" },
+  { value: "C", label: "C" },
+  { value: "D", label: "D" },
+  { value: "R", label: "R" },
+  { value: "F", label: "F" },
+] as const;
+
+function normalizeGradeKey(grade: string): string {
+  const t = (grade || "").trim();
+  if (!t || t === "NO_GRADE") return "NO_GRADE";
+  return t[0].toUpperCase() + t.slice(1);
+}
+
+/** Quality points per unit for a letter grade; null excludes the course from the average. */
+function getQualityPoints(grade: string, mode: GradingMode): number | null {
+  const key = normalizeGradeKey(grade);
+  if (key === "NO_GRADE") return null;
+
+  if (mode === "graduate") {
+    const pts = GRADUATE_GRADE_POINTS[key];
+    return pts !== undefined ? pts : null;
+  }
+
+  // Undergrad: flat letter bands (plus/minus do not change points).
+  if (key === "R" || key === "F") return 0.0;
+  const base = key[0];
+  if (base === "A") return 4.0;
+  if (base === "B") return 3.0;
+  if (base === "C") return 2.0;
+  if (base === "D") return 1.0;
+  return null;
+}
+
+const calculateSemesterGpa = (courses: Course[], mode: GradingMode): number => {
   let totalQualityPoints = 0;
   let totalFactorableUnits = 0;
-  
-  courses.forEach(course => {
-    const points = gradePoints[course.grade];
-    const units = typeof course.units === 'string' ? parseFloat(course.units) : course.units;
+
+  courses.forEach((course) => {
+    const points = getQualityPoints(course.grade, mode);
+    const units = typeof course.units === "string" ? parseFloat(course.units) : course.units;
     if (points !== null && points !== undefined && units !== undefined && !isNaN(units)) {
       totalQualityPoints += units * points;
       totalFactorableUnits += units;
@@ -58,6 +111,11 @@ const calculateSemesterGpa = (courses: Course[]): number => {
 const QpaCalculator = () => {
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [qpa, setQpa] = useState<number>(0.0);
+  const [gradingMode, setGradingMode] = useState<GradingMode>(() => {
+    if (typeof window === "undefined") return "undergrad";
+    const stored = localStorage.getItem(GRADING_MODE_STORAGE_KEY);
+    return stored === "graduate" ? "graduate" : "undergrad";
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -72,9 +130,12 @@ const QpaCalculator = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('semesters', JSON.stringify(semesters));
-    calculateQpa();
+    localStorage.setItem("semesters", JSON.stringify(semesters));
   }, [semesters]);
+
+  useEffect(() => {
+    localStorage.setItem(GRADING_MODE_STORAGE_KEY, gradingMode);
+  }, [gradingMode]);
 
   const addSemester = () => {
     setSemesters(prevSemesters => [
@@ -172,11 +233,10 @@ const QpaCalculator = () => {
   const calculateQpa = useCallback(() => {
     let totalQualityPoints = 0;
     let totalFactorableUnits = 0;
-    semesters.forEach(semester => {
-      semester.courses.forEach(course => {
-        const points = gradePoints[course.grade];
-        const units = typeof course.units === 'string' ? parseFloat(course.units) : course.units;
-        // Only factor in grades that have numeric grade points (excludes P, R, W, N)
+    semesters.forEach((semester) => {
+      semester.courses.forEach((course) => {
+        const points = getQualityPoints(course.grade, gradingMode);
+        const units = typeof course.units === "string" ? parseFloat(course.units) : course.units;
         if (points !== null && points !== undefined && units !== undefined && !isNaN(units)) {
           totalQualityPoints += units * points;
           totalFactorableUnits += units;
@@ -188,7 +248,11 @@ const QpaCalculator = () => {
     } else {
       setQpa(parseFloat((totalQualityPoints / totalFactorableUnits).toFixed(2)));
     }
-  }, [semesters]);
+  }, [semesters, gradingMode]);
+
+  useEffect(() => {
+    calculateQpa();
+  }, [calculateQpa]);
 
   const handleUnitsChange = (semesterId: string, courseId: string, value: string) => {
     // If the value is empty, keep it as empty string
@@ -211,11 +275,11 @@ const QpaCalculator = () => {
       const newSemesters = parsedSemesters.map(sem => ({
         id: crypto.randomUUID(),
         name: sem.name,
-        courses: sem.courses.map(course => ({
+        courses: sem.courses.map((course) => ({
           id: crypto.randomUUID(),
           name: course.name,
           units: course.units,
-          grade: course.grade
+          grade: course.grade && course.grade.trim() !== "" ? course.grade : "NO_GRADE",
         }))
       }));
       if (newSemesters.some(sem => sem.courses.length === 0)) {
@@ -248,6 +312,59 @@ const QpaCalculator = () => {
         </p>
       </div>
 
+      <TooltipProvider>
+        <div className="qpa-grading-mode">
+          <div className="qpa-grading-mode-label-row">
+            <Label id="grading-mode-label" className="text-sm font-semibold">
+              Grading mode
+            </Label>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground rounded-full p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="About grading modes"
+                >
+                  <Info className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs text-left">
+                <p className="font-medium mb-1">Undergrad</p>
+                <p className="text-muted-foreground text-xs mb-2">
+                  Plus/minus map to the same letter band (e.g. A-, A, and A+ all use 4.0 quality points per unit).
+                </p>
+                <p className="font-medium mb-1">Graduate</p>
+                <p className="text-muted-foreground text-xs">
+                  CMU-style weighted grades. A+ is still 4.0 per unit (not above 4.0).
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <RadioGroup
+            className="qpa-grading-radio"
+            value={gradingMode}
+            onValueChange={(v) => setGradingMode(v as GradingMode)}
+            aria-labelledby="grading-mode-label"
+          >
+            <div className="qpa-grading-radio-item">
+              <RadioGroupItem value="undergrad" id="mode-undergrad" />
+              <Label htmlFor="mode-undergrad" className="font-normal cursor-pointer">
+                Undergrad (flat)
+              </Label>
+            </div>
+            <div className="qpa-grading-radio-item">
+              <RadioGroupItem value="graduate" id="mode-graduate" />
+              <Label htmlFor="mode-graduate" className="font-normal cursor-pointer">
+                Graduate (plus/minus)
+              </Label>
+            </div>
+          </RadioGroup>
+          <p className="qpa-grading-mode-hint">
+            QPA = sum of (units × quality points) ÷ total units for graded courses.
+          </p>
+        </div>
+      </TooltipProvider>
+
       <div className="qpa-actions">
         <input
           type="file"
@@ -278,7 +395,7 @@ const QpaCalculator = () => {
       >
         <div ref={scrollContainerRef} className="semester-list">
           {semesters.map((semester, index) => {
-            const semesterGpa = calculateSemesterGpa(semester.courses);
+            const semesterGpa = calculateSemesterGpa(semester.courses, gradingMode);
             return (
               <Card key={semester.id} className="semester-card">
                 <CardHeader className="semester-header">
@@ -345,15 +462,8 @@ const QpaCalculator = () => {
                           }}
                         />
                         
-                        <CustomSelect 
-                          options={[
-                            { value: "NO_GRADE", label: "No Grade" },
-                            { value: "A", label: "A" },
-                            { value: "B", label: "B" },
-                            { value: "C", label: "C" },
-                            { value: "D", label: "D" },
-                            { value: "R", label: "R" }
-                          ]}
+                        <CustomSelect
+                          options={[...COURSE_GRADE_OPTIONS]}
                           value={course.grade || "NO_GRADE"}
                           onValueChange={(value) => updateCourse(semester.id, course.id, 'grade', value)}
                           className="course-grade-select"
