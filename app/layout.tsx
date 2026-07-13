@@ -4,7 +4,7 @@ import './globals.css';
 import '@/styles/components/layout.css';
 import { FloatingElementsProvider } from '@/hooks/floating-elements';
 import { Toaster } from "@/components/ui/toaster";
-import Head from "next/head";
+
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -97,6 +97,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="theme-color" content="#C41230" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <script

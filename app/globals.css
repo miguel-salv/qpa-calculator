@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   padding-top: 1rem;
 }
 
@@ -22,7 +22,7 @@ body {
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 0 91% 29%; /* Updated to resemble #960100 */
+    --primary: 348 83% 42%; /* CMU Carnegie Red #C41230 */
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
@@ -34,7 +34,7 @@ body {
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
+    --ring: 348 83% 42%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -52,7 +52,7 @@ body {
     
     /* Map theme variables to our CSS variables for compatibility */
     --color-primary: var(--primary);
-    --color-primary-rgb: 150, 1, 0; /* Equivalent to #960100 */
+    --color-primary-rgb: 196, 18, 48; /* #C41230 */
     --color-muted-foreground: var(--muted-foreground);
     --border-color: var(--border);
   }
@@ -64,8 +64,8 @@ body {
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 91% 29%; /* Updated to resemble #960100 */
-    --primary-foreground: 0 0% 9%;
+    --primary: 348 83% 42%; /* CMU Carnegie Red #C41230 */
+    --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
@@ -93,7 +93,7 @@ body {
     
     /* Map theme variables to our CSS variables for dark mode compatibility */
     --color-primary: var(--primary);
-    --color-primary-rgb: 150, 1, 0; /* Equivalent to #960100 */
+    --color-primary-rgb: 196, 18, 48; /* #C41230 */
     --color-muted-foreground: var(--muted-foreground);
     --border-color: var(--border);
   }

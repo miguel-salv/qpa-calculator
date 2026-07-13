@@ -22,7 +22,21 @@
 
 # misc
 .DS_Store
+Thumbs.db
 *.pem
+
+# env files
+.env
+.env.*
+!.env.example
+
+# editors
+.vscode/
+.idea/
+*.swp
+
+# opencode
+.opencode/
 
 # debug
 npm-debug.log*

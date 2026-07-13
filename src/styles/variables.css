@@ -1,7 +1,7 @@
 :root {
   /* Colors */
-  --color-primary: hsl(0 91% 29%);
-  --color-primary-rgb: 59, 130, 246;
+  --color-primary: hsl(348 83% 42%); /* CMU Carnegie Red #C41230 */
+  --color-primary-rgb: 196, 18, 48; /* #C41230 */
   --color-muted-foreground: hsl(215.4 16.3% 46.9%);
   --color-border: hsl(214.3 31.8% 91.4%);
   

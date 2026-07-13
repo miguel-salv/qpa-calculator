@@ -2,6 +2,9 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   typescript: {
+    // NOTE: keep true until a local `tsc --noEmit` passes cleanly. The
+    // pdfjs-dist v3 runtime vs @types/pdfjs-dist v2 mismatch (see transcript.ts)
+    // must be resolved before flipping this to false.
     ignoreBuildErrors: true,
   },
   eslint: {
