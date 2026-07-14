@@ -36,9 +36,67 @@ function escapeHtml(str) {
 // ---- State -----------------------------------------------------------------
 let semesters = [];
 
+// ---- Undo / redo history ---------------------------------------------------
+const HISTORY_LIMIT = 50;
+let undoStack = [];
+let redoStack = [];
+// Set while a text field is being edited so a continuous typing session is
+// coalesced into a single undo entry (snapshot taken on the first keystroke).
+let editSessionOpen = false;
+
+// A snapshot is a deep clone of the data, minus transient UI-only flags.
+function snapshot() {
+  return semesters.map((s) => ({
+    id: s.id,
+    name: s.name,
+    collapsed: !!s.collapsed,
+    courses: s.courses.map((c) => ({ ...c })),
+  }));
+}
+
+// Record the current state so it can be undone. Clears the redo branch.
+function pushHistory() {
+  undoStack.push(snapshot());
+  if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+  redoStack = [];
+}
+
+// Replace live state with a snapshot, persist, and rebuild the UI.
+function restore(state) {
+  semesters = state.map((s) => ({
+    id: s.id,
+    name: s.name,
+    collapsed: !!s.collapsed,
+    courses: s.courses.map((c) => ({ ...c })),
+  }));
+  save();
+  render();
+}
+
+// Run a structural mutation with automatic history + persist + render.
+function mutate(fn) {
+  pushHistory();
+  fn();
+  save();
+  render();
+}
+
+function undo() {
+  if (undoStack.length === 0) return;
+  redoStack.push(snapshot());
+  restore(undoStack.pop());
+}
+
+function redo() {
+  if (redoStack.length === 0) return;
+  undoStack.push(snapshot());
+  restore(redoStack.pop());
+}
+
 function newSemester(index) {
   return { id: crypto.randomUUID(), name: `Semester ${index}`, courses: [], collapsed: false };
 }
+
 
 function load() {
   try {
@@ -261,50 +319,36 @@ function findCourse(semesterId, courseId) {
 }
 
 function addSemester() {
-  semesters.push(newSemester(semesters.length + 1));
-  save();
-  render();
+  mutate(() => {
+    semesters.push(newSemester(semesters.length + 1));
+  });
 }
 
 function removeSemester(id) {
   const index = semesters.findIndex((s) => s.id === id);
   if (index === -1) return;
-  const [removed] = semesters.splice(index, 1);
+  const removed = semesters[index];
 
-  // Deleting the last semester leaves a blank placeholder so the app is never
-  // empty; track it so Undo can cleanly remove it when restoring the real one.
-  let placeholderId = null;
-  if (semesters.length === 0) {
-    const placeholder = newSemester(1);
-    placeholderId = placeholder.id;
-    semesters.push(placeholder);
-  }
-  save();
-  render();
+  mutate(() => {
+    semesters.splice(index, 1);
+    // Deleting the last semester leaves a blank placeholder so the app is never
+    // empty.
+    if (semesters.length === 0) semesters.push(newSemester(1));
+  });
 
   toast({
     title: 'Semester deleted',
     description: removed.name,
-    action: {
-      label: 'Undo',
-      onClick: () => {
-        if (placeholderId) {
-          semesters = semesters.filter((s) => s.id !== placeholderId);
-        }
-        semesters.splice(Math.min(index, semesters.length), 0, removed);
-        save();
-        render();
-      },
-    },
+    action: { label: 'Undo', onClick: undo },
   });
 }
 
 function addCourse(semesterId) {
   const s = findSemester(semesterId);
   if (!s) return;
-  s.courses.push({ id: crypto.randomUUID(), name: '', units: '', grade: 'NO_GRADE' });
-  save();
-  render();
+  mutate(() => {
+    s.courses.push({ id: crypto.randomUUID(), name: '', units: '', grade: 'NO_GRADE' });
+  });
 }
 
 function removeCourse(semesterId, courseId) {
@@ -312,23 +356,15 @@ function removeCourse(semesterId, courseId) {
   if (!s) return;
   const index = s.courses.findIndex((c) => c.id === courseId);
   if (index === -1) return;
-  const [removed] = s.courses.splice(index, 1);
-  save();
-  render();
+  const removed = s.courses[index];
+  mutate(() => {
+    s.courses.splice(index, 1);
+  });
 
   toast({
     title: 'Course deleted',
     description: removed.name || 'Untitled course',
-    action: {
-      label: 'Undo',
-      onClick: () => {
-        const target = findSemester(semesterId);
-        if (!target) return; // semester itself was since removed
-        target.courses.splice(Math.min(index, target.courses.length), 0, removed);
-        save();
-        render();
-      },
-    },
+    action: { label: 'Undo', onClick: undo },
   });
 }
 
@@ -377,6 +413,14 @@ listEl.addEventListener('click', (e) => {
   }
 });
 
+// Take a single history snapshot at the start of a continuous edit session so
+// a burst of typing collapses into one undo step. Reset on focusout below.
+function beginEditSession() {
+  if (editSessionOpen) return;
+  editSessionOpen = true;
+  pushHistory();
+}
+
 // Live text/number inputs — update state WITHOUT re-render to keep focus.
 listEl.addEventListener('input', (e) => {
   const el = e.target;
@@ -384,12 +428,14 @@ listEl.addEventListener('input', (e) => {
   if (action === 'course-name') {
     const c = findCourse(el.dataset.semesterId, el.dataset.courseId);
     if (c) {
+      beginEditSession();
       c.name = el.value;
       save();
     }
   } else if (action === 'course-units') {
     const c = findCourse(el.dataset.semesterId, el.dataset.courseId);
     if (!c) return;
+    beginEditSession();
     // CMU units are whole numbers; keep digits only and clamp.
     const digits = el.value.replace(/[^0-9]/g, '');
     if (digits === '') {
@@ -404,9 +450,24 @@ listEl.addEventListener('input', (e) => {
     updateComputedUI();
   } else if (action === 'rename-input') {
     const s = findSemester(el.dataset.semesterId);
-    if (s) s.name = el.value;
+    if (s) {
+      beginEditSession();
+      s.name = el.value;
+    }
   }
 });
+
+// A continuous edit session ends when focus leaves the field.
+listEl.addEventListener(
+  'focusout',
+  (e) => {
+    const action = e.target.dataset && e.target.dataset.action;
+    if (action === 'course-name' || action === 'course-units' || action === 'rename-input') {
+      editSessionOpen = false;
+    }
+  },
+  true
+);
 
 // Commit semester rename on blur / Enter.
 listEl.addEventListener(
@@ -476,6 +537,9 @@ function setActiveOption(box, option) {
 function selectGrade(wrapper, value) {
   const c = findCourse(wrapper.dataset.semesterId, wrapper.dataset.courseId);
   if (!c) return;
+  if (c.grade !== value) {
+    pushHistory();
+  }
   c.grade = value;
   save();
   // Update trigger label + styling and options in place.
@@ -545,6 +609,10 @@ function commitSemesterOrder() {
   const ids = Array.from(listEl.querySelectorAll(':scope > .semester-card')).map(
     (el) => el.dataset.semesterId
   );
+  const changed = semesters.some((s, i) => s.id !== ids[i]);
+  if (changed) {
+    pushHistory();
+  }
   semesters.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
   save();
 }
@@ -556,6 +624,10 @@ function commitCourseOrder(semesterId, tbody) {
   const ids = Array.from(tbody.querySelectorAll(':scope > .course-row')).map(
     (el) => el.dataset.courseId
   );
+  const changed = s.courses.some((c, i) => c.id !== ids[i]);
+  if (changed) {
+    pushHistory();
+  }
   s.courses.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
   save();
 }
@@ -946,13 +1018,17 @@ if (clearAllBtn) {
       'clear-dialog',
       'clear-cancel',
       'clear-confirm',
-      'Delete all semesters and courses? This cannot be undone.'
+      'Delete all semesters and courses? You can undo this afterward.'
     );
     if (!proceed) return;
-    semesters = [newSemester(1)];
-    save();
-    render();
-    toast({ title: 'All cleared', description: 'Every semester and course has been removed.' });
+    mutate(() => {
+      semesters = [newSemester(1)];
+    });
+    toast({
+      title: 'All cleared',
+      description: 'Every semester and course has been removed.',
+      action: { label: 'Undo', onClick: undo },
+    });
   });
 }
 
@@ -1017,13 +1093,14 @@ fileInput.addEventListener('change', async (event) => {
         'One or more semesters came through empty. Re-export the academic record and try again.'
       );
     }
-    semesters = newSemesters;
-    save();
-    render();
+    mutate(() => {
+      semesters = newSemesters;
+    });
     const courseCount = newSemesters.reduce((acc, sem) => acc + sem.courses.length, 0);
     toast({
       title: 'Import complete',
       description: `Loaded ${newSemesters.length} semesters and ${courseCount} courses from your academic record.`,
+      action: { label: 'Undo', onClick: undo },
     });
   } catch (error) {
     console.error('Error parsing PDF:', error);
@@ -1038,6 +1115,30 @@ fileInput.addEventListener('change', async (event) => {
   } finally {
     setImporting(false);
     fileInput.value = '';
+  }
+});
+
+// ---- Undo / redo keyboard shortcuts ----------------------------------------
+// Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo. When a text field is
+// focused, defer to the browser's native in-field undo instead.
+document.addEventListener('keydown', (e) => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  const key = e.key.toLowerCase();
+  if (key !== 'z' && key !== 'y') return;
+
+  const el = document.activeElement;
+  const inTextField =
+    el &&
+    el.tagName === 'INPUT' &&
+    ['course-name', 'course-units', 'rename-input'].includes(el.dataset.action);
+  if (inTextField) return; // let the browser handle native text undo/redo
+
+  if (key === 'y' || (key === 'z' && e.shiftKey)) {
+    e.preventDefault();
+    redo();
+  } else if (key === 'z') {
+    e.preventDefault();
+    undo();
   }
 });
 
