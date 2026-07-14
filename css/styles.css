@@ -442,8 +442,8 @@ body {
   margin: 0;
   align-self: stretch;
   flex: 1 1 0;
-  min-height: 220px;
-  max-height: 550px;
+  min-height: 300px;
+  max-height: min(760px, 78vh);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   /* Contains overflow so it doesn't add a stray page scrollbar */
   position: relative;
@@ -891,35 +891,38 @@ body {
   .course-table tbody tr.course-row {
     border: 1px solid hsl(0 0% 90%);
     border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.625rem;
+    margin-bottom: 0.5rem;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem 0.75rem;
-    align-items: end;
+    grid-template-columns: auto 1fr 1fr auto;
+    gap: 0.4rem 0.75rem;
+    align-items: center;
   }
   .course-table tbody td {
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
     padding: 0;
   }
   .course-table tbody td.col-course {
-    grid-column: 1 / -1;
+    grid-row: 1;
+    grid-column: 2 / 4;
   }
   .course-table tbody td.col-grip {
-    grid-column: 1 / -1;
-    flex-direction: row;
+    grid-row: 1;
+    grid-column: 1;
+    justify-self: start;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     padding: 0;
   }
   .course-table tbody td.col-grip::before {
     content: none;
   }
   .course-drag-handle {
-    width: 100%;
-    height: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
   }
   .course-table tbody td::before {
     content: attr(data-label);
@@ -928,30 +931,54 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.03em;
     color: var(--color-muted-foreground);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .course-table tbody td.col-course::before {
+    content: none;
   }
   .course-table tbody td.col-actions::before {
     content: none;
   }
+  .course-name-input,
+  .course-units-input,
+  .course-grade-select {
+    min-width: 0;
+    flex: 1;
+  }
   .course-table td.col-actions {
+    grid-row: 1;
+    grid-column: 4;
+    justify-self: end;
+    align-items: center;
+  }
+  .course-table td.col-units {
+    grid-row: 2;
     grid-column: 2;
-    align-items: flex-end;
+  }
+  .course-table td.col-grade {
+    grid-row: 2;
+    grid-column: 3 / 5;
   }
   .course-name-input,
   .course-units-input,
   .course-grade-select,
   .course-delete-button {
-    height: 2.75rem;
+    height: 2.5rem;
   }
   .col-grade .grade-listbox {
     left: auto;
     right: 0;
   }
-  .semester-edit-button,
   .semester-collapse-button,
   .semester-delete-button,
   .semester-drag-handle {
-    height: 2.75rem;
-    width: 2.75rem;
+    height: 2.5rem;
+    width: 2.5rem;
+  }
+  .semester-edit-button {
+    height: 1.75rem;
+    width: 1.75rem;
   }
 }
 
