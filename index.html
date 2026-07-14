@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CMU QPA Calculator</title>
+    <meta
+      name="description"
+      content="Calculate your QPA (Quality Point Average) for CMU courses."
+    />
+    <meta name="theme-color" content="#C41230" />
+    <meta
+      name="keywords"
+      content="CMU, QPA, Calculator, Carnegie Mellon University, GPA"
+    />
+    <meta name="author" content="Miguel Salvacion" />
+    <meta
+      name="google-site-verification"
+      content="_moVArDPSJ04UvvM6ImLsYe0vs9WjuMlWi34_sv2XZw"
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="CMU QPA Calculator" />
+    <meta
+      property="og:description"
+      content="Calculate your QPA (Quality Point Average) for CMU courses."
+    />
+    <meta property="og:url" content="https://cmu-qpa.pages.dev" />
+    <meta property="og:site_name" content="CMU QPA Calculator" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/android-chrome-192x192.png" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="CMU QPA Calculator" />
+    <meta
+      name="twitter:description"
+      content="Calculate your QPA (Quality Point Average) for CMU courses."
+    />
+    <meta name="twitter:image" content="/android-chrome-192x192.png" />
+
+    <!-- Icons -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
+    <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Fonts: Geist via Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="css/styles.css" />
+
+    <!-- Structured data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "CMU QPA Calculator",
+        "description": "Calculate your QPA (Quality Point Average) for CMU courses.",
+        "url": "https://cmu-qpa.pages.dev",
+        "author": { "@type": "Person", "name": "Miguel Salvacion" },
+        "publisher": { "@type": "Person", "name": "Miguel Salvacion" },
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "CMU QPA Calculator",
+        "url": "https://cmu-qpa.pages.dev/"
+      }
+    </script>
+  </head>
+  <body>
+    <main class="main-container">
+      <h1 class="page-title">CMU QPA Calculator</h1>
+      <div class="content-container">
+        <div class="qpa-container">
+          <div class="qpa-intro">
+            <p class="qpa-intro-text">
+              Enter your courses and grades to calculate your Quality Point
+              Average. All data processing happens locally in your browser —
+              your academic records are never sent to any server.
+            </p>
+            <p class="qpa-formula-note">
+              QPA = total quality points ÷ total factorable units, where quality
+              points = units × grade value (A=4, B=3, C=2, D=1, R=0).
+              Pass/No-Grade, W, I, and audit grades are excluded.
+            </p>
+          </div>
+
+          <div class="qpa-actions">
+            <input
+              type="file"
+              accept=".pdf"
+              id="file-input"
+              class="file-input-hidden"
+              aria-label="Import CMU academic record PDF"
+            />
+            <button type="button" id="import-btn" class="btn btn-default import-button">
+              <span class="icon-slot" data-icon="upload" aria-hidden="true"></span>
+              Import from Academic Record
+            </button>
+            <button
+              type="button"
+              id="add-semester-btn"
+              class="btn btn-outline add-semester-button"
+            >
+              <span class="icon-slot" data-icon="plus" aria-hidden="true"></span>
+              Add Semester Manually
+            </button>
+          </div>
+
+          <div class="semester-scroll-area">
+            <div class="semester-list" id="semester-list"></div>
+          </div>
+
+          <div class="qpa-result" aria-live="polite">
+            <h2 class="qpa-label">Cumulative QPA</h2>
+            <p class="qpa-value tabular-nums" id="cumulative-qpa">—</p>
+            <p class="qpa-subtotal tabular-nums" id="cumulative-subtotal"></p>
+          </div>
+        </div>
+      </div>
+
+      <footer class="page-footer">
+        <div class="footer-container">
+          <div class="footer-content">
+            <div class="footer-section">
+              <h3 class="footer-heading">CMU QPA Calculator</h3>
+              <div class="space-y-2">
+                <p class="footer-text">
+                  Not officially associated with Carnegie Mellon University
+                </p>
+                <p class="footer-copyright" id="copyright"></p>
+              </div>
+            </div>
+            <div class="footer-section">
+              <h4 class="footer-subheading">Created by</h4>
+              <p class="footer-text">Miguel Salvacion</p>
+              <div class="footer-contact">
+                <a href="mailto:msalvaci@andrew.cmu.edu" class="footer-link">
+                  <span class="footer-icon icon-slot" data-icon="mail" aria-hidden="true"></span>
+                  <span>msalvaci@andrew.cmu.edu</span>
+                </a>
+                <a href="https://github.com/miguel-salv" class="footer-link">
+                  <span class="footer-icon icon-slot" data-icon="github" aria-hidden="true"></span>
+                  <span>GitHub Profile</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </main>
+
+    <!-- Delete confirmation dialog -->
+    <dialog id="confirm-dialog" class="confirm-dialog">
+      <div class="dialog-content">
+        <h2 class="dialog-title" id="dialog-title"></h2>
+        <p class="dialog-description">
+          This removes the semester and all of its courses. This action cannot
+          be undone.
+        </p>
+        <div class="dialog-footer">
+          <button type="button" class="btn btn-outline" id="dialog-cancel">Cancel</button>
+          <button type="button" class="btn btn-default" id="dialog-confirm">
+            Delete Semester
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Toast region -->
+    <div class="toast-region" id="toast-region" aria-live="assertive" aria-atomic="true"></div>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

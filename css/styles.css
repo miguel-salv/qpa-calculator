@@ -1,0 +1,894 @@
+/* =========================================================================
+   CMU QPA Calculator — vanilla stylesheet
+   Merged from the former src/styles/* plus base component styles that used
+   to come from shadcn/Tailwind (button, input, card, select, dialog, toast).
+   ========================================================================= */
+
+/* ---- Theme tokens (from globals.css light theme, HSL triplets) ---- */
+:root {
+  --background: 0 0% 96.1%; /* #F0F0F0 */
+  --foreground: 0 0% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 3.9%;
+  --primary: 348 83% 42%; /* CMU Carnegie Red #C41230 */
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 96.1%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 96.1%;
+  --muted-foreground: 0 0% 45.1%;
+  --accent: 48 100% 50%; /* Gold #FFC107 */
+  --accent-foreground: 0 0% 9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 89.8%;
+  --input: 0 0% 89.8%;
+  --ring: 348 83% 42%;
+  --radius: 0.5rem;
+
+  /* Compatibility aliases used by the ported component styles */
+  --color-primary: hsl(348 83% 42%);
+  --color-primary-rgb: 196, 18, 48;
+  --color-muted-foreground: hsl(0 0% 45.1%);
+  --color-border: hsl(0 0% 89.8%);
+}
+
+/* ---- Reset / base ---- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 100%;
+  font-family: "Geist", Arial, Helvetica, sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  padding-top: 1rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (min-width: 768px) {
+  body {
+    padding-top: 3rem;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- Buttons (replaces shadcn Button variants) ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  height: 2.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+}
+
+.btn:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.btn-default {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+.btn-default:hover {
+  background-color: hsl(var(--primary) / 0.9);
+}
+
+.btn-outline {
+  border-color: hsl(var(--input));
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+.btn-outline:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.btn-secondary {
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+}
+.btn-secondary:hover {
+  background-color: hsl(var(--secondary) / 0.8);
+}
+
+.btn-ghost {
+  background: transparent;
+}
+.btn-ghost:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.btn-sm {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+}
+
+/* ---- Inputs (replaces shadcn Input) ---- */
+.input {
+  display: flex;
+  height: 2.5rem;
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--input));
+  background-color: hsl(var(--background));
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  color: hsl(var(--foreground));
+  font-family: inherit;
+}
+.input::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+.input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+}
+@media (min-width: 768px) {
+  .input {
+    font-size: 0.875rem;
+  }
+}
+
+/* ---- Card (replaces shadcn Card) ---- */
+.card {
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* =========================================================================
+   Home page (from src/styles/pages/home.css)
+   ========================================================================= */
+.main-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: black;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  text-align: center;
+}
+
+.content-container {
+  flex: 1;
+  width: 100%;
+  max-width: 56rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.page-footer {
+  width: 100%;
+  background-color: hsl(348 83% 42%);
+  color: white;
+}
+
+.footer-container {
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 3rem 1.5rem;
+}
+
+.footer-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.footer-section {
+  max-width: 20rem;
+  margin-bottom: 1rem;
+}
+.footer-section > div {
+  margin-top: 1rem;
+}
+
+.footer-heading {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: white;
+  margin: 0;
+}
+
+.footer-subheading {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 0.5rem;
+}
+
+.footer-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  margin: 0;
+}
+
+.footer-copyright {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+.footer-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footer-link {
+  color: rgba(255, 255, 255, 0.92);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  transition: color 0.2s;
+  width: fit-content;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+.footer-link:hover {
+  color: white;
+}
+
+.footer-icon {
+  height: 0.875rem;
+  width: 0.875rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.footer-link:hover .footer-icon {
+  opacity: 1;
+}
+
+.space-y-2 > * + * {
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .page-title {
+    font-size: 1.875rem;
+    margin-bottom: 2rem;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .content-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  .footer-content {
+    flex-direction: row;
+    gap: 4rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .content-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* =========================================================================
+   QPA calculator (from src/styles/components/qpa-calculator.css)
+   ========================================================================= */
+.qpa-container {
+  width: 100%;
+  margin: 0 auto;
+  padding-bottom: 3rem;
+}
+
+.qpa-intro {
+  max-width: 42rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.qpa-intro-text {
+  font-size: 0.875rem;
+  color: var(--color-muted-foreground);
+  font-weight: 500;
+}
+
+.qpa-formula-note {
+  font-size: 0.8125rem;
+  color: var(--color-muted-foreground);
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+.qpa-actions {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.import-button,
+.add-semester-button {
+  width: 100%;
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+  font-size: 0.875rem;
+}
+
+.icon-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-slot svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.button-icon svg,
+.icon-slot[data-icon] svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.semester-scroll-area {
+  border-radius: 0.375rem;
+  border: 1px solid hsl(0 0% 90%);
+  margin: 1rem auto;
+  height: min(calc(100vh - 420px), 550px);
+  min-height: 220px;
+  max-height: 550px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  /* position:relative contains the scrollable overflow so it does not inflate
+     the document (viewport) scroll range and create a stray page scrollbar. */
+  position: relative;
+  overflow-y: auto;
+  background-color: hsl(var(--card));
+}
+
+.semester-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.semester-card {
+  margin-bottom: 0.25rem;
+}
+
+.semester-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.semester-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.semester-name-input {
+  width: 100%;
+  max-width: 20rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.semester-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.semester-name {
+  font-weight: 600;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+.semester-edit-button {
+  height: 1.75rem;
+  width: 1.75rem;
+  padding: 0;
+  opacity: 0.7;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+.semester-edit-button:hover {
+  background-color: transparent;
+  opacity: 1;
+}
+.semester-edit-icon svg {
+  height: 0.875rem;
+  width: 0.875rem;
+  color: var(--color-muted-foreground);
+}
+
+.semester-gpa-container {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.semester-gpa-label {
+  font-size: 0.8125rem;
+  color: var(--color-muted-foreground);
+}
+.semester-gpa-value {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.semester-delete-button {
+  height: 2.5rem;
+  width: 2.5rem;
+  padding: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+}
+.semester-delete-button:hover {
+  background-color: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+}
+
+.semester-delete-button .icon-slot svg,
+.course-delete-button .icon-slot svg {
+  margin-right: 0;
+}
+
+.card-content {
+  padding: 1rem;
+  padding-top: 0;
+}
+
+.course-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.course-table thead th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-muted-foreground);
+  padding: 0.5rem 0.5rem;
+  border-bottom: 1px solid hsl(0 0% 90%);
+}
+
+.course-table td {
+  padding: 0.375rem 0.5rem;
+  vertical-align: middle;
+}
+
+.course-table .col-units,
+.course-table .col-qpts {
+  width: 5.5rem;
+}
+
+.course-table th.col-qpts,
+.course-table td.col-qpts {
+  text-align: right;
+  color: var(--color-muted-foreground);
+}
+
+.course-table .col-grade {
+  width: 9rem;
+}
+
+.course-table .col-actions {
+  width: 2.75rem;
+  text-align: right;
+}
+
+.course-name-input,
+.course-units-input {
+  width: 100%;
+  height: 2.5rem;
+  transition: border-color 0.2s;
+}
+.course-name-input:hover,
+.course-units-input:hover {
+  border-color: rgba(var(--color-primary-rgb), 0.5);
+}
+
+.no-grade-text {
+  color: var(--color-muted-foreground);
+}
+
+.course-delete-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+}
+.course-delete-button:hover {
+  background-color: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+}
+
+.course-total-row th,
+.course-total-row td {
+  border-top: 2px solid hsl(0 0% 88%);
+  padding-top: 0.625rem;
+  font-weight: 700;
+}
+.course-total-row .col-course {
+  text-align: left;
+  font-size: 0.8125rem;
+  color: var(--color-muted-foreground);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.course-total-row .col-qpts {
+  color: inherit;
+}
+
+.add-course-button {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.qpa-result {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+.qpa-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+.qpa-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--color-primary);
+  margin: 0;
+}
+.qpa-subtotal {
+  font-size: 0.8125rem;
+  color: var(--color-muted-foreground);
+  margin: 0;
+}
+
+/* =========================================================================
+   Custom grade dropdown (replaces Radix Select)
+   ========================================================================= */
+.grade-select {
+  position: relative;
+  width: 100%;
+}
+
+.course-grade-select {
+  width: 100%;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--input));
+  background-color: hsl(var(--background));
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.course-grade-select:hover {
+  border-color: rgba(var(--color-primary-rgb), 0.5);
+}
+.course-grade-select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+}
+.course-grade-select .chevron {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.grade-listbox {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  min-width: 8rem;
+  max-height: 16rem;
+  overflow-y: auto;
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  padding: 0.25rem;
+  margin: 0;
+  list-style: none;
+}
+.grade-listbox[hidden] {
+  display: none;
+}
+
+.grade-option {
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  user-select: none;
+}
+.grade-option:hover,
+.grade-option.active {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+.grade-option[aria-selected="true"] {
+  font-weight: 600;
+}
+
+/* =========================================================================
+   Confirm dialog (replaces Radix AlertDialog)
+   ========================================================================= */
+.confirm-dialog {
+  border: none;
+  border-radius: var(--radius);
+  padding: 0;
+  max-width: 28rem;
+  width: calc(100% - 2rem);
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+.confirm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+.dialog-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.dialog-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+.dialog-description {
+  font-size: 0.875rem;
+  color: var(--color-muted-foreground);
+  margin: 0;
+}
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+/* =========================================================================
+   Toasts (replaces Radix Toast)
+   ========================================================================= */
+.toast-region {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 24rem;
+  width: calc(100% - 2rem);
+}
+.toast {
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  padding: 0.875rem 1rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  animation: toast-in 0.18s ease-out;
+}
+.toast.destructive {
+  border-color: hsl(var(--destructive));
+  background-color: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+}
+.toast-title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  margin: 0 0 0.125rem;
+}
+.toast-description {
+  font-size: 0.8125rem;
+  margin: 0;
+  opacity: 0.95;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================================
+   Responsive: stacked cards on small screens
+   ========================================================================= */
+@media (max-width: 639px) {
+  .course-table,
+  .course-table tbody,
+  .course-table tr {
+    display: block;
+  }
+  .course-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .course-table tbody tr.course-row {
+    border: 1px solid hsl(0 0% 90%);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 0.75rem;
+    align-items: end;
+  }
+  .course-table tbody td {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0;
+  }
+  .course-table tbody td.col-course {
+    grid-column: 1 / -1;
+  }
+  .course-table tbody td::before {
+    content: attr(data-label);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-muted-foreground);
+  }
+  .course-table tbody td.col-actions::before {
+    content: none;
+  }
+  .course-table td.col-qpts {
+    text-align: left;
+  }
+  .course-table td.col-actions {
+    grid-column: 2;
+    align-items: flex-end;
+  }
+  .course-name-input,
+  .course-units-input,
+  .course-grade-select,
+  .course-delete-button {
+    height: 2.75rem;
+  }
+  .course-total-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-top: 0.625rem;
+  }
+  .course-total-row .col-grade,
+  .course-total-row .col-actions {
+    display: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .qpa-intro-text {
+    font-size: 1rem;
+  }
+  .qpa-actions {
+    flex-direction: row;
+    gap: 1rem;
+  }
+  .import-button,
+  .add-semester-button {
+    width: auto;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 1rem;
+  }
+  .add-course-button {
+    width: auto;
+  }
+  .qpa-value {
+    font-size: 3rem;
+  }
+}

@@ -1,13 +1,6 @@
-name = "CMU QPA Calculator"
-main = "app/page.tsx"
+name = "cmu-qpa"
 compatibility_date = "2023-10-30"
 
-workers_dev = true
-route = { pattern = "cmu-qpa.pages.dev/*", zone_name = "pages.dev" }
-
-[env.staging]
-name = "cmu-qpa-staging"
-route = { pattern = "cmu-qpa-staging.pages.dev/*", zone_name = "pages.dev" }
-
-[site]
-bucket = "./public"
+# Static site — the repo root is served directly as plain HTML/CSS/JS.
+# No build step, no framework. Cloudflare Pages just uploads these assets.
+pages_build_output_dir = "."
