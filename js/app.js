@@ -35,6 +35,7 @@ const HISTORY_LIMIT = 50;
 let undoStack = [];
 let redoStack = [];
 let editSessionOpen = false;
+let focusCourseId = null;
 
 function snapshot() {
   return semesters.map((s) => ({
@@ -145,6 +146,13 @@ function render() {
       input.focus();
       input.setSelectionRange(input.value.length, input.value.length);
     }
+  }
+  if (focusCourseId) {
+    const input = listEl.querySelector(
+      `.course-row[data-course-id="${cssId(focusCourseId)}"] .course-name-input`
+    );
+    focusCourseId = null;
+    if (input) input.focus();
   }
 }
 
@@ -351,8 +359,10 @@ function removeSemester(id) {
 function addCourse(semesterId) {
   const s = findSemester(semesterId);
   if (!s) return;
+  const newId = crypto.randomUUID();
+  focusCourseId = newId;
   mutate(() => {
-    s.courses.push({ id: crypto.randomUUID(), name: '', units: '', grade: 'NO_GRADE' });
+    s.courses.push({ id: newId, name: '', units: '', grade: 'NO_GRADE' });
   });
 }
 
@@ -482,6 +492,15 @@ listEl.addEventListener('keydown', (e) => {
   if (e.target.dataset && e.target.dataset.action === 'rename-input' && e.key === 'Enter') {
     e.preventDefault();
     e.target.blur();
+  }
+});
+
+listEl.addEventListener('keydown', (e) => {
+  const action = e.target.dataset && e.target.dataset.action;
+  if ((action === 'course-name' || action === 'course-units') && e.key === 'Enter') {
+    e.preventDefault();
+    editSessionOpen = false;
+    addCourse(e.target.dataset.semesterId);
   }
 });
 

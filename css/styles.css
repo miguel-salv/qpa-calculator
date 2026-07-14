@@ -941,6 +941,10 @@ body {
   .course-delete-button {
     height: 2.75rem;
   }
+  .col-grade .grade-listbox {
+    left: auto;
+    right: 0;
+  }
 }
 
 @media (min-width: 640px) {
