@@ -83,6 +83,7 @@
   <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <main class="main-container" id="main-content">
+      <div class="calculator-viewport">
       <h1 class="page-title">CMU QPA Calculator</h1>
       <div class="content-container">
         <div class="qpa-container">
@@ -91,11 +92,6 @@
               Enter your courses and grades to calculate your Quality Point
               Average. Everything runs in your browser, so your academic records
               never leave your device.
-            </p>
-            <p class="qpa-formula-note">
-              QPA = total quality points ÷ total factorable units. Quality points
-              = units × grade value (A=4, B=3, C=2, D=1, R=0). Pass/No-Grade, W,
-              I, and audit grades don’t count.
             </p>
           </div>
 
@@ -137,9 +133,9 @@
           <div class="qpa-result" aria-live="polite">
             <h2 class="qpa-label">Cumulative QPA</h2>
             <p class="qpa-value tabular-nums" id="cumulative-qpa">—</p>
-            <p class="qpa-subtotal tabular-nums" id="cumulative-subtotal"></p>
           </div>
         </div>
+      </div>
       </div>
 
       <footer class="page-footer">

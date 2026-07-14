@@ -62,7 +62,6 @@ body {
   font-family: "Geist", Arial, Helvetica, sans-serif;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  padding-top: 1rem;
   -webkit-font-smoothing: antialiased;
   touch-action: manipulation;
   -webkit-tap-highlight-color: rgba(var(--color-primary-rgb), 0.15);
@@ -90,7 +89,7 @@ body {
 }
 
 @media (min-width: 768px) {
-  body {
+  .calculator-viewport {
     padding-top: 3rem;
   }
 }
@@ -99,14 +98,10 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Numeric readouts (QPA values, units, quality points) speak in mono. */
+/* Numeric readouts (QPA values, units) speak in mono. */
 .qpa-value,
 .semester-gpa-value,
-.course-units-input,
-.course-table [data-course-qpts],
-.course-table [data-total-units],
-.course-table [data-total-qpts],
-.qpa-subtotal {
+.course-units-input {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
@@ -159,7 +154,7 @@ body {
   color: hsl(var(--primary-foreground));
 }
 .btn-default:hover {
-  background-color: hsl(var(--primary) / 0.9);
+  background-color: hsl(348 83% 34%);
 }
 
 .btn-outline {
@@ -178,7 +173,7 @@ body {
   color: hsl(var(--secondary-foreground));
 }
 .btn-secondary:hover {
-  background-color: hsl(var(--secondary) / 0.8);
+  background-color: hsl(0 0% 86%);
 }
 
 .btn-ghost {
@@ -239,10 +234,19 @@ body {
   align-items: center;
 }
 
+.calculator-viewport {
+  width: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 1rem;
+}
+
 .page-title {
   font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   color: black;
   padding-left: 1rem;
   padding-right: 1rem;
@@ -258,6 +262,9 @@ body {
   padding-right: 1rem;
   margin-left: auto;
   margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .page-footer {
@@ -353,7 +360,7 @@ body {
 @media (min-width: 768px) {
   .page-title {
     font-size: 1.875rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     padding-left: 0;
     padding-right: 0;
   }
@@ -380,7 +387,11 @@ body {
 .qpa-container {
   width: 100%;
   margin: 0 auto;
-  padding-bottom: 3rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 1.5rem;
 }
 
 .qpa-intro {
@@ -395,16 +406,7 @@ body {
   font-weight: 500;
 }
 
-.qpa-formula-note {
-  font-size: 0.8125rem;
-  color: var(--color-muted-foreground);
-  margin-top: 0.5rem;
-  line-height: 1.4;
-  text-wrap: pretty;
-}
-
 .qpa-actions {
-  margin-top: 1.25rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -442,8 +444,9 @@ body {
 .semester-scroll-area {
   border-radius: 0.375rem;
   border: 1px solid hsl(0 0% 90%);
-  margin: 1rem auto;
-  height: min(calc(100vh - 420px), 550px);
+  margin: 0;
+  align-self: stretch;
+  flex: 1 1 0;
   min-height: 220px;
   max-height: 550px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -588,20 +591,13 @@ body {
   vertical-align: middle;
 }
 
-.course-table .col-units,
-.course-table .col-qpts {
+.course-table .col-units {
   width: 5.5rem;
 }
 
 .course-table .col-grip {
   width: 2rem;
   text-align: center;
-}
-
-.course-table th.col-qpts,
-.course-table td.col-qpts {
-  text-align: right;
-  color: var(--color-muted-foreground);
 }
 
 .course-table .col-grade {
@@ -642,23 +638,6 @@ body {
   color: var(--color-primary);
 }
 
-.course-total-row th,
-.course-total-row td {
-  border-top: 2px solid hsl(0 0% 88%);
-  padding-top: 0.625rem;
-  font-weight: 700;
-}
-.course-total-row .col-course {
-  text-align: left;
-  font-size: 0.8125rem;
-  color: var(--color-muted-foreground);
-  text-transform: none;
-  letter-spacing: 0;
-}
-.course-total-row .col-qpts {
-  color: inherit;
-}
-
 .add-course-button {
   width: 100%;
   margin-top: 0.75rem;
@@ -670,8 +649,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 .qpa-label {
   font-size: 1rem;
@@ -686,11 +664,6 @@ body {
   font-weight: 800;
   line-height: 1.1;
   color: var(--color-primary);
-  margin: 0;
-}
-.qpa-subtotal {
-  font-size: 0.8125rem;
-  color: var(--color-muted-foreground);
   margin: 0;
 }
 
@@ -923,9 +896,6 @@ body {
   .course-table tbody td.col-actions::before {
     content: none;
   }
-  .course-table td.col-qpts {
-    text-align: left;
-  }
   .course-table td.col-actions {
     grid-column: 2;
     align-items: flex-end;
@@ -935,17 +905,6 @@ body {
   .course-grade-select,
   .course-delete-button {
     height: 2.75rem;
-  }
-  .course-total-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding-top: 0.625rem;
-  }
-  .course-total-row .col-grade,
-  .course-total-row .col-actions,
-  .course-total-row .col-grip {
-    display: none;
   }
 }
 
@@ -1028,7 +987,7 @@ body {
   border-radius: var(--radius);
   background-color: hsl(var(--card));
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22), 0 4px 10px rgba(0, 0, 0, 0.12);
-  transform: scale(1.02) rotate(-0.5deg);
+  transform: scale(1.02);
   transform-origin: center;
   cursor: grabbing;
   will-change: top, left, transform;
@@ -1046,7 +1005,7 @@ body {
 /* Settle animation: glide into the final slot on release. */
 .drag-floating.settling {
   transition: top 0.18s ease, left 0.18s ease, transform 0.18s ease;
-  transform: scale(1) rotate(0deg);
+  transform: scale(1);
 }
 
 /* Origin slot becomes the gold drop-indicator gap. */

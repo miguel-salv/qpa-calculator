@@ -72,13 +72,6 @@ function save() {
 
 const formatQpa = (qpa) => (qpa === null ? '—' : qpa.toFixed(2));
 
-function courseQualityPoints(course) {
-  const points = gradePoints(course.grade);
-  const units = typeof course.units === 'string' ? parseFloat(course.units) : course.units;
-  if (points === null || units === undefined || isNaN(units)) return '—';
-  return (points * units).toFixed(1);
-}
-
 function gradeLabel(value) {
   const opt = GRADE_OPTIONS.find((o) => o.value === value);
   return opt ? opt.label : 'No Grade';
@@ -86,6 +79,7 @@ function gradeLabel(value) {
 
 // ---- Rendering -------------------------------------------------------------
 const listEl = document.getElementById('semester-list');
+const scrollArea = document.querySelector('.semester-scroll-area');
 
 function render() {
   listEl.innerHTML = semesters.map(renderSemester).join('');
@@ -114,19 +108,6 @@ function render() {
 function renderSemester(semester, index) {
   const sid = escapeHtml(semester.id);
   const rows = semester.courses.map((c) => renderCourseRow(semester.id, c)).join('');
-  const totalsRow =
-    semester.courses.length > 0
-      ? `<tfoot>
-           <tr class="course-total-row">
-             <td class="col-grip" aria-hidden="true"></td>
-             <th scope="row" class="col-course">Semester totals</th>
-             <td class="col-units tabular-nums" data-total-units></td>
-             <td class="col-grade" aria-hidden="true"></td>
-             <td class="col-qpts tabular-nums" data-total-qpts></td>
-             <td class="col-actions"></td>
-           </tr>
-         </tfoot>`
-      : '';
 
   const nameBlock = semester.isEditing
     ? `<input type="text" class="input semester-name-input" value="${escapeHtml(
@@ -181,12 +162,10 @@ function renderSemester(semester, index) {
               <th scope="col" class="col-course">Course</th>
               <th scope="col" class="col-units">Units</th>
               <th scope="col" class="col-grade">Grade</th>
-              <th scope="col" class="col-qpts">Quality Pts</th>
               <th scope="col" class="col-actions"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
-          ${totalsRow}
         </table>
         <button type="button" class="btn btn-secondary btn-sm add-course-button"
           data-action="add-course" data-semester-id="${sid}">
@@ -219,14 +198,14 @@ function renderCourseRow(semesterId, course) {
       </td>
       <td class="col-course" data-label="Course">
         <input type="text" class="input course-name-input"
-          placeholder="e.g. 15-122 Principles of Imperative Computation…"
+          placeholder="e.g. 18-349 Introduction to Embedded Systems"
           value="${escapeHtml(course.name)}" autocomplete="off" spellcheck="false"
           aria-label="Course name (optional)"
           data-action="course-name" data-semester-id="${sid}" data-course-id="${cid}" />
       </td>
       <td class="col-units" data-label="Units">
         <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
-          class="input course-units-input tabular-nums" placeholder="e.g. 9…"
+          class="input course-units-input tabular-nums" placeholder="e.g. 9"
           value="${course.units === '' ? '' : escapeHtml(String(course.units))}"
           aria-label="Units"
           data-action="course-units" data-semester-id="${sid}" data-course-id="${cid}" />
@@ -242,7 +221,6 @@ function renderCourseRow(semesterId, course) {
           <ul class="grade-listbox" role="listbox" hidden>${options}</ul>
         </div>
       </td>
-      <td class="col-qpts tabular-nums" data-label="Quality Pts" data-course-qpts>—</td>
       <td class="col-actions">
         <button type="button" class="btn btn-ghost btn-sm course-delete-button"
           data-action="delete-course" data-semester-id="${sid}" data-course-id="${cid}"
@@ -262,24 +240,10 @@ function updateComputedUI() {
 
     const qpaEl = card.querySelector('[data-semester-qpa]');
     if (qpaEl) qpaEl.textContent = formatQpa(totals.qpa);
-
-    const tUnits = card.querySelector('[data-total-units]');
-    if (tUnits) tUnits.textContent = totals.factorableUnits;
-    const tQpts = card.querySelector('[data-total-qpts]');
-    if (tQpts) tQpts.textContent = totals.qualityPoints.toFixed(1);
-
-    for (const course of semester.courses) {
-      const row = card.querySelector(`.course-row[data-course-id="${cssId(course.id)}"]`);
-      if (!row) continue;
-      const cell = row.querySelector('[data-course-qpts]');
-      if (cell) cell.textContent = courseQualityPoints(course);
-    }
   }
 
   const cumulative = computeTotals(semesters.flatMap((s) => s.courses));
   document.getElementById('cumulative-qpa').textContent = formatQpa(cumulative.qpa);
-  document.getElementById('cumulative-subtotal').textContent =
-    `${cumulative.factorableUnits} factorable units · ${cumulative.qualityPoints.toFixed(1)} quality points`;
 }
 
 // crypto.randomUUID() output is CSS-selector safe, but guard just in case.
@@ -682,36 +646,46 @@ function onHandlePointerDown(e) {
     pointerId: e.pointerId,
     grabOffsetY: e.clientY - rect.top,
     left: rect.left,
+    lastClientY: e.clientY,
+    autoScrollRaf: 0,
     moved: false,
   };
   document.body.classList.add('is-dragging');
+  startAutoScroll();
 
   // Listen on window (not the handle): reordering moves the handle in the DOM,
   // which releases pointer capture and would otherwise send pointerup elsewhere.
   window.addEventListener('pointermove', onHandlePointerMove);
   window.addEventListener('pointerup', onHandlePointerUp);
   window.addEventListener('pointercancel', onHandlePointerUp);
-  // Capture loss (e.g. from the DOM move above) must also settle the drag so
-  // the floating clone can never outlive the gesture.
-  handle.addEventListener('lostpointercapture', onHandlePointerUp);
 }
 
 function onHandlePointerMove(e) {
   if (!dragState) return;
-  const { item, container, isCourse, floating, reduced } = dragState;
   dragState.moved = true;
+  dragState.lastClientY = e.clientY;
 
-  if (floating) {
-    floating.style.top = e.clientY - dragState.grabOffsetY + 'px';
-    floating.style.left = dragState.left + 'px';
+  if (dragState.floating) {
+    dragState.floating.style.top = e.clientY - dragState.grabOffsetY + 'px';
+    dragState.floating.style.left = dragState.left + 'px';
   }
+
+  updateInsertion(e.clientY);
+}
+
+// Reorder the placeholder to match the pointer's vertical position. Shared by
+// pointermove and the auto-scroll loop (so a still cursor near an edge keeps
+// advancing the placeholder as the box scrolls).
+function updateInsertion(clientY) {
+  if (!dragState) return;
+  const { item, container, isCourse, reduced } = dragState;
 
   // Find the first sibling whose midpoint sits below the pointer.
   const siblings = siblingItems(container, isCourse, item);
   let ref = null;
   for (const sib of siblings) {
     const r = sib.getBoundingClientRect();
-    if (e.clientY < r.top + r.height / 2) {
+    if (clientY < r.top + r.height / 2) {
       ref = sib;
       break;
     }
@@ -741,6 +715,57 @@ function onHandlePointerMove(e) {
   });
 }
 
+// ---- Edge auto-scroll ------------------------------------------------------
+// While dragging, scroll the inner box when the pointer nears its top/bottom
+// edge so items scrolled out of view remain reachable. Box only — never the
+// page.
+const AUTOSCROLL_EDGE = 48; // px zone at each edge
+const AUTOSCROLL_MAX = 14; // px per frame at the very edge
+
+function startAutoScroll() {
+  if (!scrollArea) return;
+  const step = () => {
+    if (!dragState) return;
+    const rect = scrollArea.getBoundingClientRect();
+    const y = dragState.lastClientY;
+    const maxScroll = scrollArea.scrollHeight - scrollArea.clientHeight;
+    let delta = 0;
+
+    if (maxScroll > 0) {
+      const topGap = y - rect.top;
+      const bottomGap = rect.bottom - y;
+      if (topGap < AUTOSCROLL_EDGE && scrollArea.scrollTop > 0) {
+        // Closer to the edge (and past it) → faster, up to the cap.
+        const strength = Math.min(1, (AUTOSCROLL_EDGE - topGap) / AUTOSCROLL_EDGE);
+        delta = -Math.ceil(strength * AUTOSCROLL_MAX);
+      } else if (bottomGap < AUTOSCROLL_EDGE && scrollArea.scrollTop < maxScroll) {
+        const strength = Math.min(1, (AUTOSCROLL_EDGE - bottomGap) / AUTOSCROLL_EDGE);
+        delta = Math.ceil(strength * AUTOSCROLL_MAX);
+      }
+    }
+
+    if (delta !== 0) {
+      scrollArea.scrollTop += delta;
+      // List shifted under a possibly-still cursor: re-evaluate the drop slot
+      // and keep the floating clone pinned to the viewport pointer position.
+      updateInsertion(y);
+      if (dragState.floating) {
+        dragState.floating.style.top = y - dragState.grabOffsetY + 'px';
+      }
+    }
+
+    dragState.autoScrollRaf = requestAnimationFrame(step);
+  };
+  dragState.autoScrollRaf = requestAnimationFrame(step);
+}
+
+function stopAutoScroll() {
+  if (dragState && dragState.autoScrollRaf) {
+    cancelAnimationFrame(dragState.autoScrollRaf);
+    dragState.autoScrollRaf = 0;
+  }
+}
+
 function onHandlePointerUp() {
   if (!dragState || dragState.ending) return; // re-entrancy guard
   dragState.ending = true;
@@ -748,7 +773,7 @@ function onHandlePointerUp() {
   window.removeEventListener('pointermove', onHandlePointerMove);
   window.removeEventListener('pointerup', onHandlePointerUp);
   window.removeEventListener('pointercancel', onHandlePointerUp);
-  handle.removeEventListener('lostpointercapture', onHandlePointerUp);
+  stopAutoScroll();
   document.body.classList.remove('is-dragging');
 
   const finish = () => {
@@ -927,7 +952,7 @@ if (clearAllBtn) {
     semesters = [newSemester(1)];
     save();
     render();
-    toast({ title: 'All cleared', description: 'Started a fresh calculator.' });
+    toast({ title: 'All cleared', description: 'Every semester and course has been removed.' });
   });
 }
 
@@ -974,9 +999,12 @@ fileInput.addEventListener('change', async (event) => {
         'No courses found in that PDF. Export your academic record from SIO and import that file.'
       );
     }
-    const newSemesters = parsed.map((sem) => ({
+    const newSemesters = parsed.map((sem, i) => ({
       id: crypto.randomUUID(),
       name: sem.name,
+      // Imports are sorted oldest→newest; collapse all but the most recent so
+      // a long transcript lands as a scannable summary with the latest open.
+      collapsed: i !== parsed.length - 1,
       courses: sem.courses.map((course) => ({
         id: crypto.randomUUID(),
         name: course.name,
