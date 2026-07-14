@@ -8,7 +8,7 @@
       name="description"
       content="Calculate your QPA (Quality Point Average) for CMU courses."
     />
-    <meta name="theme-color" content="#C41230" />
+    <meta name="theme-color" content="#F0F0F0" />
     <meta
       name="keywords"
       content="CMU, QPA, Calculator, Carnegie Mellon University, GPA"
@@ -81,20 +81,21 @@
     </script>
   </head>
   <body>
-    <main class="main-container">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <main class="main-container" id="main-content">
       <h1 class="page-title">CMU QPA Calculator</h1>
       <div class="content-container">
         <div class="qpa-container">
           <div class="qpa-intro">
             <p class="qpa-intro-text">
               Enter your courses and grades to calculate your Quality Point
-              Average. All data processing happens locally in your browser —
-              your academic records are never sent to any server.
+              Average. Everything runs in your browser, so your academic records
+              never leave your device.
             </p>
             <p class="qpa-formula-note">
-              QPA = total quality points ÷ total factorable units, where quality
-              points = units × grade value (A=4, B=3, C=2, D=1, R=0).
-              Pass/No-Grade, W, I, and audit grades are excluded.
+              QPA = total quality points ÷ total factorable units. Quality points
+              = units × grade value (A=4, B=3, C=2, D=1, R=0). Pass/No-Grade, W,
+              I, and audit grades don't count.
             </p>
           </div>
 
@@ -104,6 +105,7 @@
               accept=".pdf"
               id="file-input"
               class="file-input-hidden"
+              tabindex="-1"
               aria-label="Import CMU academic record PDF"
             />
             <button type="button" id="import-btn" class="btn btn-default import-button">
@@ -175,6 +177,23 @@
           <button type="button" class="btn btn-outline" id="dialog-cancel">Cancel</button>
           <button type="button" class="btn btn-default" id="dialog-confirm">
             Delete Semester
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Import overwrite confirmation dialog -->
+    <dialog id="import-dialog" class="confirm-dialog">
+      <div class="dialog-content">
+        <h2 class="dialog-title">Replace your current courses?</h2>
+        <p class="dialog-description">
+          Importing your academic record replaces every semester and course you
+          have now. This can't be undone.
+        </p>
+        <div class="dialog-footer">
+          <button type="button" class="btn btn-outline" id="import-cancel">Cancel</button>
+          <button type="button" class="btn btn-default" id="import-confirm">
+            Replace &amp; Import
           </button>
         </div>
       </div>

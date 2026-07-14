@@ -7,9 +7,9 @@
 
 </div>
 
-A modern, user-friendly Quality Point Average (QPA) calculator for Carnegie
-Mellon University students. Built as a **dependency-free static website** — plain
-HTML, CSS, and vanilla JavaScript. No Node, no npm, no build step.
+A Quality Point Average (QPA) calculator for Carnegie Mellon University
+students. It's a dependency-free static website: plain HTML, CSS, and vanilla
+JavaScript, with no Node, no npm, and no build step.
 
 ## Table of Contents
 - [QPA-Calculator](#qpa-calculator)
@@ -28,9 +28,9 @@ HTML, CSS, and vanilla JavaScript. No Node, no npm, no build step.
 - Add multiple semesters manually
 - Add courses with names, grades, and units
 - Real-time QPA calculation
-- Data stored locally in your browser — no server uploads
-- Clean and responsive interface
-- Zero build tooling and zero runtime frameworks
+- Data stays in your browser — nothing is uploaded to a server
+- Responsive layout that works on phones and desktops
+- No build tooling and no runtime frameworks
 
 ## Tech Stack
 
@@ -40,8 +40,8 @@ HTML, CSS, and vanilla JavaScript. No Node, no npm, no build step.
 - [PDF.js](https://mozilla.github.io/pdf.js/) — the only third-party library,
   self-hosted in `vendor/`, used to parse academic-record PDFs
 
-There is **no Node.js or npm requirement**. PDF.js is just a static `.js` file
-loaded via a `<script>` tag — not an installed package.
+There is **no Node.js or npm requirement**. PDF.js is a static `.js` file loaded
+via a `<script>` tag, not an installed package.
 
 ## Running the Project
 

@@ -180,7 +180,8 @@ function renderCourseRow(semesterId, course) {
   const missing = course.grade === 'NO_GRADE';
   const options = GRADE_OPTIONS.map(
     (opt) =>
-      `<li class="grade-option" role="option" data-value="${escapeHtml(opt.value)}"
+      `<li class="grade-option" role="option" id="grade-opt-${cid}-${escapeHtml(opt.value)}"
+         data-value="${escapeHtml(opt.value)}"
          aria-selected="${opt.value === course.grade}">${escapeHtml(opt.label)}</li>`
   ).join('');
 
@@ -188,14 +189,14 @@ function renderCourseRow(semesterId, course) {
     <tr class="course-row" data-course-id="${cid}">
       <td class="col-course" data-label="Course">
         <input type="text" class="input course-name-input"
-          placeholder="e.g. 15-122 Principles of Imperative Computation"
+          placeholder="e.g. 15-122 Principles of Imperative Computation…"
           value="${escapeHtml(course.name)}" autocomplete="off" spellcheck="false"
           aria-label="Course name (optional)"
           data-action="course-name" data-semester-id="${sid}" data-course-id="${cid}" />
       </td>
       <td class="col-units" data-label="Units">
-        <input type="text" inputmode="numeric" pattern="[0-9]*"
-          class="input course-units-input tabular-nums" placeholder="e.g. 9"
+        <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
+          class="input course-units-input tabular-nums" placeholder="e.g. 9…"
           value="${course.units === '' ? '' : escapeHtml(String(course.units))}"
           aria-label="Units"
           data-action="course-units" data-semester-id="${sid}" data-course-id="${cid}" />
@@ -410,6 +411,7 @@ function closeDropdown() {
   const trigger = openDropdown.querySelector('.course-grade-select');
   box.hidden = true;
   trigger.setAttribute('aria-expanded', 'false');
+  trigger.removeAttribute('aria-activedescendant');
   box.querySelectorAll('.grade-option.active').forEach((o) => o.classList.remove('active'));
   openDropdown = null;
 }
@@ -419,6 +421,8 @@ function setActiveOption(box, option) {
   box.querySelectorAll('.grade-option.active').forEach((o) => o.classList.remove('active'));
   option.classList.add('active');
   option.scrollIntoView({ block: 'nearest' });
+  const trigger = box.closest('.grade-select').querySelector('.course-grade-select');
+  if (option.id) trigger.setAttribute('aria-activedescendant', option.id);
 }
 
 function selectGrade(wrapper, value) {
@@ -512,21 +516,55 @@ document.getElementById('dialog-confirm').addEventListener('click', () => {
   dialog.close();
 });
 
+// ---- Import overwrite confirmation -----------------------------------------
+const importDialog = document.getElementById('import-dialog');
+
+function confirmOverwrite() {
+  if (typeof importDialog.showModal !== 'function') {
+    return Promise.resolve(
+      confirm('Importing replaces your current semesters and courses. Continue?')
+    );
+  }
+  return new Promise((resolve) => {
+    const onCancel = () => finish(false);
+    const onConfirm = () => finish(true);
+    function finish(result) {
+      importDialog.removeEventListener('close', onClose);
+      document.getElementById('import-cancel').removeEventListener('click', onCancel);
+      document.getElementById('import-confirm').removeEventListener('click', onConfirm);
+      importDialog.close();
+      resolve(result);
+    }
+    // Esc key / backdrop dismissal counts as cancel.
+    const onClose = () => finish(false);
+    importDialog.addEventListener('close', onClose);
+    document.getElementById('import-cancel').addEventListener('click', onCancel);
+    document.getElementById('import-confirm').addEventListener('click', onConfirm);
+    importDialog.showModal();
+  });
+}
+
 // ---- Toasts ----------------------------------------------------------------
 const toastRegion = document.getElementById('toast-region');
 
 function toast({ title, description, variant }) {
   const el = document.createElement('div');
-  el.className = 'toast' + (variant === 'destructive' ? ' destructive' : '');
-  el.setAttribute('role', 'status');
+  const destructive = variant === 'destructive';
+  el.className = 'toast' + (destructive ? ' destructive' : '');
+  el.setAttribute('role', destructive ? 'alert' : 'status');
   el.innerHTML = `
     ${title ? `<p class="toast-title">${escapeHtml(title)}</p>` : ''}
     ${description ? `<p class="toast-description">${escapeHtml(description)}</p>` : ''}`;
   toastRegion.appendChild(el);
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   setTimeout(() => {
-    el.style.transition = 'opacity 0.2s';
-    el.style.opacity = '0';
-    setTimeout(() => el.remove(), 200);
+    if (!reduceMotion) {
+      el.style.transition = 'opacity 0.2s';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 200);
+    } else {
+      el.remove();
+    }
   }, 5000);
 }
 
@@ -534,21 +572,46 @@ function toast({ title, description, variant }) {
 document.getElementById('add-semester-btn').addEventListener('click', addSemester);
 
 const fileInput = document.getElementById('file-input');
-document.getElementById('import-btn').addEventListener('click', () => fileInput.click());
+const importBtn = document.getElementById('import-btn');
+importBtn.addEventListener('click', () => fileInput.click());
+
+function hasExistingCourses() {
+  return semesters.some((s) => s.courses.length > 0);
+}
+
+function setImporting(isImporting) {
+  importBtn.disabled = isImporting;
+  const label = importBtn.childNodes[importBtn.childNodes.length - 1];
+  // Update the trailing text node label without wiping the icon.
+  if (label && label.nodeType === Node.TEXT_NODE) {
+    label.textContent = isImporting ? ' Importing…' : ' Import from Academic Record';
+  }
+}
 
 fileInput.addEventListener('change', async (event) => {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
+
+  // Guard against silently wiping manually entered data.
+  if (hasExistingCourses()) {
+    const proceed = await confirmOverwrite();
+    if (!proceed) {
+      fileInput.value = '';
+      return;
+    }
+  }
+
+  setImporting(true);
   try {
     if (!file.name.toLowerCase().endsWith('.pdf')) {
-      throw new Error('Please upload a PDF file');
+      throw new Error('That file isn’t a PDF. Choose your CMU academic record PDF and try again.');
     }
     // Lazy-load the transcript parser only when a PDF is actually imported.
     const { parseCMUTranscript } = await import('./transcript.js');
     const parsed = await parseCMUTranscript(file);
     if (parsed.length === 0) {
       throw new Error(
-        'No semester data found. Please make sure this is a CMU academic record PDF.'
+        'No courses found in that PDF. Export your academic record from SIO and import that file.'
       );
     }
     const newSemesters = parsed.map((sem) => ({
@@ -563,7 +626,7 @@ fileInput.addEventListener('change', async (event) => {
     }));
     if (newSemesters.some((sem) => sem.courses.length === 0)) {
       throw new Error(
-        'Some semesters have no courses. Please make sure the PDF is properly formatted.'
+        'One or more semesters came through empty. Re-export the academic record and try again.'
       );
     }
     semesters = newSemesters;
@@ -571,21 +634,23 @@ fileInput.addEventListener('change', async (event) => {
     render();
     const courseCount = newSemesters.reduce((acc, sem) => acc + sem.courses.length, 0);
     toast({
-      title: 'Success',
-      description: `Imported ${newSemesters.length} semesters with ${courseCount} courses from your academic record.`,
+      title: 'Import complete',
+      description: `Loaded ${newSemesters.length} semesters and ${courseCount} courses from your academic record.`,
     });
   } catch (error) {
     console.error('Error parsing PDF:', error);
     toast({
-      title: 'Error',
+      title: 'Import failed',
       description:
         error instanceof Error
           ? error.message
-          : 'Failed to parse the academic record. Please make sure you uploaded a valid CMU academic record PDF.',
+          : 'Couldn’t read that academic record. Check the file and try again.',
       variant: 'destructive',
     });
+  } finally {
+    setImporting(false);
+    fileInput.value = '';
   }
-  fileInput.value = '';
 });
 
 // ---- Boot ------------------------------------------------------------------
