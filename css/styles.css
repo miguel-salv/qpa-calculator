@@ -382,6 +382,13 @@ body {
   font-weight: 500;
 }
 
+.qpa-disclaimer {
+  margin: 0.5rem auto 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-muted-foreground);
+}
+
 .qpa-actions {
   display: flex;
   flex-direction: column;

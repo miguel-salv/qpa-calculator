@@ -1098,9 +1098,19 @@ fileInput.addEventListener('change', async (event) => {
       semesters = newSemesters;
     });
     const courseCount = newSemesters.reduce((acc, sem) => acc + sem.courses.length, 0);
+    const needGrade = newSemesters.reduce(
+      (acc, sem) => acc + sem.courses.filter((c) => c.grade === 'NO_GRADE').length,
+      0
+    );
+    let description = `Loaded ${newSemesters.length} semesters, ${courseCount} courses.`;
+    if (needGrade > 0) {
+      description += ` ${needGrade} ${
+        needGrade === 1 ? 'needs' : 'need'
+      } a grade.`;
+    }
     toast({
       title: 'Import complete',
-      description: `Loaded ${newSemesters.length} semesters and ${courseCount} courses from your academic record.`,
+      description,
       action: { label: 'Undo', onClick: undo },
     });
   } catch (error) {
