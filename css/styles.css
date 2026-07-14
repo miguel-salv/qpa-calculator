@@ -1,10 +1,3 @@
-/* =========================================================================
-   CMU QPA Calculator — vanilla stylesheet
-   Merged from the former src/styles/* plus base component styles that used
-   to come from shadcn/Tailwind (button, input, card, select, dialog, toast).
-   ========================================================================= */
-
-/* ---- Theme tokens (from globals.css light theme, HSL triplets) ---- */
 :root {
   --background: 0 0% 96.1%; /* #F0F0F0 */
   --foreground: 0 0% 3.9%;
@@ -25,26 +18,20 @@
   --ring: 348 83% 42%;
   --radius: 0.5rem;
 
-  /* Neutral hover surface — replaces the jarring gold flash on ghost/outline
-     buttons so red stays an accent, not a hover color. */
   --hover-surface: 0 0% 92.5%;
 
-  /* Gold now has a resting job: the drag drop-indicator. */
   --gold: 45 100% 46%; /* #E8B400 */
 
-  /* Compatibility aliases used by the ported component styles */
   --color-primary: hsl(348 83% 42%);
   --color-primary-rgb: 196, 18, 48;
   --color-muted-foreground: hsl(0 0% 45.1%);
   --color-border: hsl(0 0% 89.8%);
 
-  /* Numeric readouts use Geist Mono for a calculator voice. */
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   color-scheme: light;
 }
 
-/* ---- Reset / base ---- */
 *,
 *::before,
 *::after {
@@ -67,7 +54,6 @@ body {
   -webkit-tap-highlight-color: rgba(var(--color-primary-rgb), 0.15);
 }
 
-/* Skip link — visible only on keyboard focus */
 .skip-link {
   position: absolute;
   left: 0.5rem;
@@ -98,7 +84,6 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Numeric readouts (QPA values, units) speak in mono. */
 .qpa-value,
 .semester-gpa-value,
 .course-units-input {
@@ -118,7 +103,6 @@ body {
   border: 0;
 }
 
-/* ---- Buttons (replaces shadcn Button variants) ---- */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -189,7 +173,6 @@ body {
   padding: 0 0.75rem;
 }
 
-/* ---- Inputs (replaces shadcn Input) ---- */
 .input {
   display: flex;
   height: 2.5rem;
@@ -215,7 +198,6 @@ body {
   }
 }
 
-/* ---- Card (replaces shadcn Card) ---- */
 .card {
   border-radius: var(--radius);
   border: 1px solid hsl(var(--border));
@@ -224,9 +206,6 @@ body {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-/* =========================================================================
-   Home page (from src/styles/pages/home.css)
-   ========================================================================= */
 .main-container {
   width: 100%;
   display: flex;
@@ -381,9 +360,6 @@ body {
   }
 }
 
-/* =========================================================================
-   QPA calculator (from src/styles/components/qpa-calculator.css)
-   ========================================================================= */
 .qpa-container {
   width: 100%;
   margin: 0 auto;
@@ -450,8 +426,7 @@ body {
   min-height: 220px;
   max-height: 550px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  /* position:relative contains the scrollable overflow so it does not inflate
-     the document (viewport) scroll range and create a stray page scrollbar. */
+  /* Contains overflow so it doesn't add a stray page scrollbar */
   position: relative;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -667,9 +642,6 @@ body {
   margin: 0;
 }
 
-/* =========================================================================
-   Custom grade dropdown (replaces Radix Select)
-   ========================================================================= */
 .grade-select {
   position: relative;
   width: 100%;
@@ -742,9 +714,6 @@ body {
   color: hsl(var(--primary));
 }
 
-/* =========================================================================
-   Confirm dialog (replaces Radix AlertDialog)
-   ========================================================================= */
 .confirm-dialog {
   border: none;
   border-radius: var(--radius);
@@ -783,9 +752,6 @@ body {
   margin-top: 0.75rem;
 }
 
-/* =========================================================================
-   Toasts (replaces Radix Toast)
-   ========================================================================= */
 .toast-region {
   position: fixed;
   bottom: 1rem;
@@ -832,9 +798,6 @@ body {
   }
 }
 
-/* =========================================================================
-   Responsive: stacked cards on small screens
-   ========================================================================= */
 @media (max-width: 639px) {
   .course-table,
   .course-table tbody,
@@ -931,9 +894,6 @@ body {
   }
 }
 
-/* =========================================================================
-   Drag handles, collapse, clear-all, toast actions
-   ========================================================================= */
 .drag-handle {
   display: inline-flex;
   align-items: center;
@@ -948,7 +908,7 @@ body {
   cursor: grab;
   opacity: 0.6;
   flex-shrink: 0;
-  /* Stop the browser claiming the touch gesture for scrolling. */
+  /* Stop the browser claiming the drag gesture for scrolling */
   touch-action: none;
   transition: opacity 0.2s, color 0.2s, background-color 0.2s;
 }
@@ -969,7 +929,6 @@ body {
   height: 1.75rem;
 }
 
-/* Element currently being dragged (reduced-motion fallback path) */
 .dragging {
   opacity: 0.5;
   cursor: grabbing;
@@ -978,7 +937,6 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
-/* ---- Tactile drag: floating clone that follows the cursor ---- */
 .drag-floating {
   position: fixed;
   margin: 0 !important;
@@ -992,7 +950,6 @@ body {
   cursor: grabbing;
   will-change: top, left, transform;
 }
-/* Floating course row rides inside a mini table so cell widths hold. */
 .drag-float-table {
   table-layout: fixed;
   border-collapse: collapse;
@@ -1002,13 +959,12 @@ body {
 .drag-float-table td {
   padding: 0.375rem 0.5rem;
 }
-/* Settle animation: glide into the final slot on release. */
 .drag-floating.settling {
   transition: top 0.18s ease, left 0.18s ease, transform 0.18s ease;
   transform: scale(1);
 }
 
-/* Origin slot becomes the gold drop-indicator gap. */
+/* Vacated slot becomes the gold drop-indicator gap */
 .drag-origin {
   position: relative;
   outline: 2px dashed hsl(var(--gold));
@@ -1022,12 +978,10 @@ tr.drag-origin > th {
   visibility: hidden;
 }
 
-/* Siblings glide out of the way (FLIP). */
 .drag-flip {
   transition: transform 0.18s ease;
 }
 
-/* Suppress text selection / callouts across the page while dragging */
 body.is-dragging,
 body.is-dragging * {
   user-select: none;
@@ -1035,7 +989,6 @@ body.is-dragging * {
   cursor: grabbing !important;
 }
 
-/* Collapse toggle */
 .semester-collapse-button {
   height: 1.75rem;
   width: 1.75rem;
@@ -1055,7 +1008,6 @@ body.is-dragging * {
   transform: rotate(-90deg);
 }
 
-/* Clear-all button — de-emphasized, danger on hover */
 .clear-all-button {
   color: var(--color-muted-foreground);
 }
@@ -1064,7 +1016,6 @@ body.is-dragging * {
   color: var(--color-primary);
 }
 
-/* Toast with an action button */
 .toast {
   display: flex;
   align-items: center;
@@ -1094,9 +1045,6 @@ body.is-dragging * {
   box-shadow: 0 0 0 2px hsl(var(--card)), 0 0 0 4px hsl(var(--ring));
 }
 
-/* =========================================================================
-   Reduced motion — honor user preference
-   ========================================================================= */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

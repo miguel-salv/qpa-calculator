@@ -1,11 +1,7 @@
-// Vanilla app logic — replaces QpaCalculator.tsx, the Radix Select/AlertDialog/
-// Toast widgets, and the React state/render loop.
-
 import { GRADE_OPTIONS, computeTotals, gradePoints, MAX_UNITS } from './grades.js';
 
 const STORAGE_KEY = 'semesters';
 
-// ---- Inline SVG icons (replaces lucide-react) ------------------------------
 const ICONS = {
   upload:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
@@ -33,18 +29,13 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-// ---- State -----------------------------------------------------------------
 let semesters = [];
 
-// ---- Undo / redo history ---------------------------------------------------
 const HISTORY_LIMIT = 50;
 let undoStack = [];
 let redoStack = [];
-// Set while a text field is being edited so a continuous typing session is
-// coalesced into a single undo entry (snapshot taken on the first keystroke).
 let editSessionOpen = false;
 
-// A snapshot is a deep clone of the data, minus transient UI-only flags.
 function snapshot() {
   return semesters.map((s) => ({
     id: s.id,
@@ -54,14 +45,12 @@ function snapshot() {
   }));
 }
 
-// Record the current state so it can be undone. Clears the redo branch.
 function pushHistory() {
   undoStack.push(snapshot());
   if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
   redoStack = [];
 }
 
-// Replace live state with a snapshot, persist, and rebuild the UI.
 function restore(state) {
   semesters = state.map((s) => ({
     id: s.id,
@@ -73,7 +62,6 @@ function restore(state) {
   render();
 }
 
-// Run a structural mutation with automatic history + persist + render.
 function mutate(fn) {
   pushHistory();
   fn();
@@ -104,7 +92,6 @@ function load() {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Back-fill fields added after a user's data was first saved.
         semesters = parsed.map((s) => ({
           collapsed: false,
           ...s,
@@ -114,7 +101,6 @@ function load() {
       }
     }
   } catch (error) {
-    // Corrupt/legacy storage must never white-screen the app.
     console.error('Failed to read saved semesters, resetting:', error);
   }
   semesters = [newSemester(1)];
@@ -135,13 +121,11 @@ function gradeLabel(value) {
   return opt ? opt.label : 'No Grade';
 }
 
-// ---- Rendering -------------------------------------------------------------
 const listEl = document.getElementById('semester-list');
 const scrollArea = document.querySelector('.semester-scroll-area');
 
 function render() {
   listEl.innerHTML = semesters.map(renderSemester).join('');
-  // Populate static icon slots (buttons, footer) once per render.
   document.querySelectorAll('.icon-slot[data-icon]').forEach((el) => {
     if (!el.dataset.filled) {
       el.innerHTML = ICONS[el.dataset.icon] || '';
@@ -149,8 +133,6 @@ function render() {
     }
   });
   updateComputedUI();
-  // Dynamically injected inputs don't honor the `autofocus` attribute, so
-  // focus the active rename field manually and place the caret at the end.
   const editing = semesters.find((s) => s.isEditing);
   if (editing) {
     const input = listEl.querySelector(
@@ -289,7 +271,6 @@ function renderCourseRow(semesterId, course) {
     </tr>`;
 }
 
-// Update all computed QPA figures in place (no DOM rebuild → no focus loss).
 function updateComputedUI() {
   for (const semester of semesters) {
     const card = listEl.querySelector(`.semester-card[data-semester-id="${cssId(semester.id)}"]`);
@@ -304,12 +285,10 @@ function updateComputedUI() {
   document.getElementById('cumulative-qpa').textContent = formatQpa(cumulative.qpa);
 }
 
-// crypto.randomUUID() output is CSS-selector safe, but guard just in case.
 function cssId(id) {
   return String(id).replace(/["\\]/g, '\\$&');
 }
 
-// ---- State mutations -------------------------------------------------------
 function findSemester(id) {
   return semesters.find((s) => s.id === id);
 }
@@ -331,8 +310,6 @@ function removeSemester(id) {
 
   mutate(() => {
     semesters.splice(index, 1);
-    // Deleting the last semester leaves a blank placeholder so the app is never
-    // empty.
     if (semesters.length === 0) semesters.push(newSemester(1));
   });
 
@@ -376,7 +353,6 @@ function toggleCollapse(semesterId) {
   render();
 }
 
-// ---- Event delegation ------------------------------------------------------
 listEl.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
   if (!el) return;
@@ -413,15 +389,13 @@ listEl.addEventListener('click', (e) => {
   }
 });
 
-// Take a single history snapshot at the start of a continuous edit session so
-// a burst of typing collapses into one undo step. Reset on focusout below.
+// Snapshot once per typing burst so undo reverts the whole edit, not each keystroke
 function beginEditSession() {
   if (editSessionOpen) return;
   editSessionOpen = true;
   pushHistory();
 }
 
-// Live text/number inputs — update state WITHOUT re-render to keep focus.
 listEl.addEventListener('input', (e) => {
   const el = e.target;
   const action = el.dataset.action;
@@ -436,7 +410,6 @@ listEl.addEventListener('input', (e) => {
     const c = findCourse(el.dataset.semesterId, el.dataset.courseId);
     if (!c) return;
     beginEditSession();
-    // CMU units are whole numbers; keep digits only and clamp.
     const digits = el.value.replace(/[^0-9]/g, '');
     if (digits === '') {
       c.units = '';
@@ -457,7 +430,6 @@ listEl.addEventListener('input', (e) => {
   }
 });
 
-// A continuous edit session ends when focus leaves the field.
 listEl.addEventListener(
   'focusout',
   (e) => {
@@ -469,7 +441,6 @@ listEl.addEventListener(
   true
 );
 
-// Commit semester rename on blur / Enter.
 listEl.addEventListener(
   'blur',
   (e) => {
@@ -496,7 +467,6 @@ function commitRename(input) {
   render();
 }
 
-// ---- Custom dropdown -------------------------------------------------------
 let openDropdown = null;
 
 function toggleDropdown(wrapper) {
@@ -542,7 +512,6 @@ function selectGrade(wrapper, value) {
   }
   c.grade = value;
   save();
-  // Update trigger label + styling and options in place.
   const trigger = wrapper.querySelector('.course-grade-select');
   trigger.querySelector('.grade-value').textContent = gradeLabel(value);
   trigger.classList.toggle('no-grade-text', value === 'NO_GRADE');
@@ -554,7 +523,6 @@ function selectGrade(wrapper, value) {
   trigger.focus();
 }
 
-// Option click
 listEl.addEventListener('click', (e) => {
   const opt = e.target.closest('.grade-option');
   if (opt) {
@@ -563,7 +531,6 @@ listEl.addEventListener('click', (e) => {
   }
 });
 
-// Keyboard nav within dropdown / open on key
 listEl.addEventListener('keydown', (e) => {
   const trigger = e.target.closest('.course-grade-select');
   if (trigger && !openDropdown) {
@@ -600,11 +567,6 @@ document.addEventListener('click', (e) => {
   if (openDropdown && !e.target.closest('.grade-select')) closeDropdown();
 });
 
-// ---- Drag & keyboard reordering --------------------------------------------
-// Pointer Events give one code path for mouse, touch, and pen. Native HTML5
-// drag-and-drop is deliberately avoided because it doesn't fire on touch.
-
-// Reorder the `semesters` array to match current DOM order of the cards.
 function commitSemesterOrder() {
   const ids = Array.from(listEl.querySelectorAll(':scope > .semester-card')).map(
     (el) => el.dataset.semesterId
@@ -617,7 +579,6 @@ function commitSemesterOrder() {
   save();
 }
 
-// Reorder one semester's courses to match current DOM order within its table.
 function commitCourseOrder(semesterId, tbody) {
   const s = findSemester(semesterId);
   if (!s) return;
@@ -642,7 +603,6 @@ function siblingItems(container, isCourse, exclude) {
   return Array.from(container.querySelectorAll(sel)).filter((el) => el !== exclude);
 }
 
-// Copy live input values into a clone (cloneNode misses typed-in values).
 function syncClonedInputs(src, clone) {
   const s = src.querySelectorAll('input');
   const c = clone.querySelectorAll('input');
@@ -651,9 +611,6 @@ function syncClonedInputs(src, clone) {
   });
 }
 
-// Build the lifted element that follows the cursor. A dragged <tr> can't be
-// pulled out of its table cleanly, so it rides inside a mini fixed table that
-// mirrors the source column widths.
 function buildFloating(item, rect, isCourse) {
   let floating;
   if (isCourse) {
@@ -686,7 +643,7 @@ function buildFloating(item, rect, isCourse) {
 function onHandlePointerDown(e) {
   const handle = e.target.closest('.drag-handle');
   if (!handle) return;
-  if (e.button !== undefined && e.button !== 0) return; // primary button / touch only
+  if (e.button !== undefined && e.button !== 0) return;
 
   const isCourse = handle.dataset.action === 'drag-course';
   const item = handle.closest(isCourse ? '.course-row' : '.semester-card');
@@ -725,8 +682,7 @@ function onHandlePointerDown(e) {
   document.body.classList.add('is-dragging');
   startAutoScroll();
 
-  // Listen on window (not the handle): reordering moves the handle in the DOM,
-  // which releases pointer capture and would otherwise send pointerup elsewhere.
+  // Listen on window: reordering moves the handle in the DOM and drops pointer capture
   window.addEventListener('pointermove', onHandlePointerMove);
   window.addEventListener('pointerup', onHandlePointerUp);
   window.addEventListener('pointercancel', onHandlePointerUp);
@@ -745,14 +701,10 @@ function onHandlePointerMove(e) {
   updateInsertion(e.clientY);
 }
 
-// Reorder the placeholder to match the pointer's vertical position. Shared by
-// pointermove and the auto-scroll loop (so a still cursor near an edge keeps
-// advancing the placeholder as the box scrolls).
 function updateInsertion(clientY) {
   if (!dragState) return;
   const { item, container, isCourse, reduced } = dragState;
 
-  // Find the first sibling whose midpoint sits below the pointer.
   const siblings = siblingItems(container, isCourse, item);
   let ref = null;
   for (const sib of siblings) {
@@ -763,7 +715,6 @@ function updateInsertion(clientY) {
     }
   }
 
-  // Skip when the target slot hasn't actually changed.
   if (ref === item.nextElementSibling || ref === item) return;
 
   if (reduced) {
@@ -771,7 +722,7 @@ function updateInsertion(clientY) {
     return;
   }
 
-  // FLIP: measure siblings, reorder, then invert + play so they glide.
+  // FLIP: measure, reorder, then invert + play so siblings animate
   const first = siblings.map((el) => el.getBoundingClientRect().top);
   container.insertBefore(item, ref);
   siblings.forEach((el, i) => {
@@ -787,12 +738,8 @@ function updateInsertion(clientY) {
   });
 }
 
-// ---- Edge auto-scroll ------------------------------------------------------
-// While dragging, scroll the inner box when the pointer nears its top/bottom
-// edge so items scrolled out of view remain reachable. Box only — never the
-// page.
-const AUTOSCROLL_EDGE = 48; // px zone at each edge
-const AUTOSCROLL_MAX = 14; // px per frame at the very edge
+const AUTOSCROLL_EDGE = 48;
+const AUTOSCROLL_MAX = 14;
 
 function startAutoScroll() {
   if (!scrollArea) return;
@@ -807,7 +754,6 @@ function startAutoScroll() {
       const topGap = y - rect.top;
       const bottomGap = rect.bottom - y;
       if (topGap < AUTOSCROLL_EDGE && scrollArea.scrollTop > 0) {
-        // Closer to the edge (and past it) → faster, up to the cap.
         const strength = Math.min(1, (AUTOSCROLL_EDGE - topGap) / AUTOSCROLL_EDGE);
         delta = -Math.ceil(strength * AUTOSCROLL_MAX);
       } else if (bottomGap < AUTOSCROLL_EDGE && scrollArea.scrollTop < maxScroll) {
@@ -818,8 +764,6 @@ function startAutoScroll() {
 
     if (delta !== 0) {
       scrollArea.scrollTop += delta;
-      // List shifted under a possibly-still cursor: re-evaluate the drop slot
-      // and keep the floating clone pinned to the viewport pointer position.
       updateInsertion(y);
       if (dragState.floating) {
         dragState.floating.style.top = y - dragState.grabOffsetY + 'px';
@@ -839,7 +783,7 @@ function stopAutoScroll() {
 }
 
 function onHandlePointerUp() {
-  if (!dragState || dragState.ending) return; // re-entrancy guard
+  if (!dragState || dragState.ending) return;
   dragState.ending = true;
   const { handle, item, container, isCourse, floating, moved, reduced } = dragState;
   window.removeEventListener('pointermove', onHandlePointerMove);
@@ -866,7 +810,6 @@ function onHandlePointerUp() {
     dragState = null;
   };
 
-  // Glide the floating clone into its final slot, then clean up.
   if (floating && !reduced) {
     const dest = item.getBoundingClientRect();
     floating.classList.add('settling');
@@ -879,7 +822,7 @@ function onHandlePointerUp() {
       finish();
     };
     floating.addEventListener('transitionend', end, { once: true });
-    setTimeout(end, 240); // fallback if transitionend never fires
+    setTimeout(end, 240);
   } else {
     finish();
   }
@@ -887,7 +830,6 @@ function onHandlePointerUp() {
 
 listEl.addEventListener('pointerdown', onHandlePointerDown);
 
-// Keyboard reordering: Arrow Up/Down on a focused handle moves the item.
 function moveItemInArray(arr, from, to) {
   if (to < 0 || to >= arr.length) return false;
   const [it] = arr.splice(from, 1);
@@ -924,7 +866,6 @@ function focusHandle(selector) {
   if (el) el.focus();
 }
 
-// ---- Modal confirmation (import overwrite, clear all) ----------------------
 function confirmViaDialog(dialogId, cancelId, confirmId, fallbackMessage) {
   const dlg = document.getElementById(dialogId);
   if (!dlg || typeof dlg.showModal !== 'function') {
@@ -935,7 +876,7 @@ function confirmViaDialog(dialogId, cancelId, confirmId, fallbackMessage) {
     const confirmBtn = document.getElementById(confirmId);
     const onCancel = () => finish(false);
     const onConfirm = () => finish(true);
-    const onClose = () => finish(false); // Esc / backdrop counts as cancel
+    const onClose = () => finish(false);
     function finish(result) {
       dlg.removeEventListener('close', onClose);
       cancelBtn.removeEventListener('click', onCancel);
@@ -959,7 +900,6 @@ function confirmOverwrite() {
   );
 }
 
-// ---- Toasts ----------------------------------------------------------------
 const toastRegion = document.getElementById('toast-region');
 
 function toast({ title, description, variant, action }) {
@@ -996,18 +936,16 @@ function toast({ title, description, variant, action }) {
     btn.textContent = action.label || 'Undo';
     btn.addEventListener('click', () => {
       action.onClick();
-      dismissed = true; // render() will drop this toast; skip the fade.
+      dismissed = true;
       el.remove();
     });
     el.appendChild(btn);
   }
 
   toastRegion.appendChild(el);
-  // Undo actions get a longer window so keyboard users can reach the button.
   setTimeout(dismiss, action ? 8000 : 5000);
 }
 
-// ---- Toolbar actions -------------------------------------------------------
 document.getElementById('add-semester-btn').addEventListener('click', addSemester);
 
 const clearAllBtn = document.getElementById('clear-all-btn');
@@ -1043,7 +981,6 @@ function hasExistingCourses() {
 function setImporting(isImporting) {
   importBtn.disabled = isImporting;
   const label = importBtn.childNodes[importBtn.childNodes.length - 1];
-  // Update the trailing text node label without wiping the icon.
   if (label && label.nodeType === Node.TEXT_NODE) {
     label.textContent = isImporting ? ' Importing…' : ' Import from Academic Record';
   }
@@ -1053,7 +990,6 @@ fileInput.addEventListener('change', async (event) => {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
 
-  // Guard against silently wiping manually entered data.
   if (hasExistingCourses()) {
     const proceed = await confirmOverwrite();
     if (!proceed) {
@@ -1067,7 +1003,6 @@ fileInput.addEventListener('change', async (event) => {
     if (!file.name.toLowerCase().endsWith('.pdf')) {
       throw new Error('That file isn’t a PDF. Choose your CMU academic record PDF and try again.');
     }
-    // Lazy-load the transcript parser only when a PDF is actually imported.
     const { parseCMUTranscript } = await import('./transcript.js');
     const parsed = await parseCMUTranscript(file);
     if (parsed.length === 0) {
@@ -1078,8 +1013,6 @@ fileInput.addEventListener('change', async (event) => {
     const newSemesters = parsed.map((sem, i) => ({
       id: crypto.randomUUID(),
       name: sem.name,
-      // Imports are sorted oldest→newest; collapse all but the most recent so
-      // a long transcript lands as a scannable summary with the latest open.
       collapsed: i !== parsed.length - 1,
       courses: sem.courses.map((course) => ({
         id: crypto.randomUUID(),
@@ -1118,9 +1051,6 @@ fileInput.addEventListener('change', async (event) => {
   }
 });
 
-// ---- Undo / redo keyboard shortcuts ----------------------------------------
-// Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo. When a text field is
-// focused, defer to the browser's native in-field undo instead.
 document.addEventListener('keydown', (e) => {
   if (!(e.ctrlKey || e.metaKey)) return;
   const key = e.key.toLowerCase();
@@ -1131,7 +1061,8 @@ document.addEventListener('keydown', (e) => {
     el &&
     el.tagName === 'INPUT' &&
     ['course-name', 'course-units', 'rename-input'].includes(el.dataset.action);
-  if (inTextField) return; // let the browser handle native text undo/redo
+  // In text fields, defer to the browser's native undo
+  if (inTextField) return;
 
   if (key === 'y' || (key === 'z' && e.shiftKey)) {
     e.preventDefault();
@@ -1142,7 +1073,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ---- Boot ------------------------------------------------------------------
 document.getElementById('copyright').textContent = `Copyright © ${new Date().getFullYear()}`;
 load();
 render();

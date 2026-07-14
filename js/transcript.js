@@ -1,12 +1,9 @@
-// Transcript parsing. Uses the self-hosted PDF.js *modern* ES-module build
-// (vendor/pdf.mjs + vendor/pdf.worker.mjs). This whole module — and therefore
-// PDF.js — is only imported when a user actually imports a PDF (see app.js).
-
 import { normalizeGrade } from './grades.js';
 import * as pdfjsLib from '../vendor/pdf.mjs';
 
 let isWorkerInitialized = false;
 
+// Configure the PDF.js worker once, on first import
 function initWorker() {
   if (!isWorkerInitialized) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -72,12 +69,10 @@ export async function parseCMUTranscript(file) {
         if (courseNumPattern.test(potentialCourseNum)) {
           const units = parseFloat(potentialUnits);
           if (!isNaN(units) && units > 0) {
-            // Convert units to integer by removing decimals
             const formattedUnits = Math.floor(units).toString();
             semesters[i].courses.push({
               name: `${potentialCourseNum}: ${potentialCourseName}`,
               units: formattedUnits,
-              // Map to the canonical grade model; unknown tokens => NO_GRADE.
               grade: normalizeGrade(potentialGrade),
             });
             j += 3;
