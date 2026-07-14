@@ -598,6 +598,55 @@ function commitCourseOrder(semesterId, tbody) {
 
 let dragState = null;
 
+const prefersReducedMotion = () =>
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function siblingItems(container, isCourse, exclude) {
+  const sel = isCourse ? ':scope > .course-row' : ':scope > .semester-card';
+  return Array.from(container.querySelectorAll(sel)).filter((el) => el !== exclude);
+}
+
+// Copy live input values into a clone (cloneNode misses typed-in values).
+function syncClonedInputs(src, clone) {
+  const s = src.querySelectorAll('input');
+  const c = clone.querySelectorAll('input');
+  s.forEach((el, i) => {
+    if (c[i]) c[i].value = el.value;
+  });
+}
+
+// Build the lifted element that follows the cursor. A dragged <tr> can't be
+// pulled out of its table cleanly, so it rides inside a mini fixed table that
+// mirrors the source column widths.
+function buildFloating(item, rect, isCourse) {
+  let floating;
+  if (isCourse) {
+    floating = document.createElement('table');
+    floating.className = 'course-table drag-floating drag-float-table';
+    const tbody = document.createElement('tbody');
+    const clone = item.cloneNode(true);
+    const srcCells = item.children;
+    const cloneCells = clone.children;
+    for (let i = 0; i < srcCells.length; i++) {
+      if (cloneCells[i]) {
+        cloneCells[i].style.width = srcCells[i].getBoundingClientRect().width + 'px';
+      }
+    }
+    syncClonedInputs(item, clone);
+    tbody.appendChild(clone);
+    floating.appendChild(tbody);
+  } else {
+    floating = item.cloneNode(true);
+    floating.classList.add('drag-floating');
+    syncClonedInputs(item, floating);
+  }
+  floating.setAttribute('aria-hidden', 'true');
+  floating.style.top = rect.top + 'px';
+  floating.style.left = rect.left + 'px';
+  floating.style.width = rect.width + 'px';
+  return floating;
+}
+
 function onHandlePointerDown(e) {
   const handle = e.target.closest('.drag-handle');
   if (!handle) return;
@@ -611,54 +660,132 @@ function onHandlePointerDown(e) {
   e.preventDefault();
   handle.setPointerCapture(e.pointerId);
 
-  dragState = { handle, item, container, isCourse, pointerId: e.pointerId, moved: false };
-  item.classList.add('dragging');
+  const reduced = prefersReducedMotion();
+  const rect = item.getBoundingClientRect();
+
+  let floating = null;
+  if (reduced) {
+    item.classList.add('dragging');
+  } else {
+    floating = buildFloating(item, rect, isCourse);
+    document.body.appendChild(floating);
+    item.classList.add('drag-origin');
+  }
+
+  dragState = {
+    handle,
+    item,
+    container,
+    isCourse,
+    floating,
+    reduced,
+    pointerId: e.pointerId,
+    grabOffsetY: e.clientY - rect.top,
+    left: rect.left,
+    moved: false,
+  };
   document.body.classList.add('is-dragging');
 
-  handle.addEventListener('pointermove', onHandlePointerMove);
-  handle.addEventListener('pointerup', onHandlePointerUp);
-  handle.addEventListener('pointercancel', onHandlePointerUp);
+  // Listen on window (not the handle): reordering moves the handle in the DOM,
+  // which releases pointer capture and would otherwise send pointerup elsewhere.
+  window.addEventListener('pointermove', onHandlePointerMove);
+  window.addEventListener('pointerup', onHandlePointerUp);
+  window.addEventListener('pointercancel', onHandlePointerUp);
+  // Capture loss (e.g. from the DOM move above) must also settle the drag so
+  // the floating clone can never outlive the gesture.
+  handle.addEventListener('lostpointercapture', onHandlePointerUp);
 }
 
 function onHandlePointerMove(e) {
   if (!dragState) return;
-  const { item, container, isCourse } = dragState;
+  const { item, container, isCourse, floating, reduced } = dragState;
   dragState.moved = true;
 
-  const siblingSelector = isCourse ? ':scope > .course-row' : ':scope > .semester-card';
-  const siblings = Array.from(container.querySelectorAll(siblingSelector)).filter(
-    (el) => el !== item
-  );
+  if (floating) {
+    floating.style.top = e.clientY - dragState.grabOffsetY + 'px';
+    floating.style.left = dragState.left + 'px';
+  }
 
-  // Insert before the first sibling whose vertical midpoint is below the pointer.
-  const y = e.clientY;
-  let inserted = false;
+  // Find the first sibling whose midpoint sits below the pointer.
+  const siblings = siblingItems(container, isCourse, item);
+  let ref = null;
   for (const sib of siblings) {
-    const rect = sib.getBoundingClientRect();
-    if (y < rect.top + rect.height / 2) {
-      container.insertBefore(item, sib);
-      inserted = true;
+    const r = sib.getBoundingClientRect();
+    if (e.clientY < r.top + r.height / 2) {
+      ref = sib;
       break;
     }
   }
-  if (!inserted) container.appendChild(item);
+
+  // Skip when the target slot hasn't actually changed.
+  if (ref === item.nextElementSibling || ref === item) return;
+
+  if (reduced) {
+    container.insertBefore(item, ref);
+    return;
+  }
+
+  // FLIP: measure siblings, reorder, then invert + play so they glide.
+  const first = siblings.map((el) => el.getBoundingClientRect().top);
+  container.insertBefore(item, ref);
+  siblings.forEach((el, i) => {
+    const dy = first[i] - el.getBoundingClientRect().top;
+    if (!dy) return;
+    el.classList.add('drag-flip');
+    el.style.transition = 'none';
+    el.style.transform = `translateY(${dy}px)`;
+    requestAnimationFrame(() => {
+      el.style.transition = '';
+      el.style.transform = '';
+    });
+  });
 }
 
 function onHandlePointerUp() {
-  if (!dragState) return;
-  const { handle, item, container, isCourse, moved } = dragState;
-  handle.removeEventListener('pointermove', onHandlePointerMove);
-  handle.removeEventListener('pointerup', onHandlePointerUp);
-  handle.removeEventListener('pointercancel', onHandlePointerUp);
-  item.classList.remove('dragging');
+  if (!dragState || dragState.ending) return; // re-entrancy guard
+  dragState.ending = true;
+  const { handle, item, container, isCourse, floating, moved, reduced } = dragState;
+  window.removeEventListener('pointermove', onHandlePointerMove);
+  window.removeEventListener('pointerup', onHandlePointerUp);
+  window.removeEventListener('pointercancel', onHandlePointerUp);
+  handle.removeEventListener('lostpointercapture', onHandlePointerUp);
   document.body.classList.remove('is-dragging');
 
-  if (moved) {
-    if (isCourse) commitCourseOrder(item.dataset.semesterId, container);
-    else commitSemesterOrder();
-    updateComputedUI();
+  const finish = () => {
+    if (floating) floating.remove();
+    item.classList.remove('drag-origin', 'dragging');
+    container
+      .querySelectorAll('.drag-flip')
+      .forEach((el) => el.classList.remove('drag-flip'));
+    if (moved) {
+      if (isCourse) commitCourseOrder(item.dataset.semesterId, container);
+      else commitSemesterOrder();
+      updateComputedUI();
+    }
+    const sel = isCourse
+      ? `.course-drag-handle[data-course-id="${cssId(item.dataset.courseId)}"]`
+      : `.semester-drag-handle[data-semester-id="${cssId(item.dataset.semesterId)}"]`;
+    focusHandle(sel);
+    dragState = null;
+  };
+
+  // Glide the floating clone into its final slot, then clean up.
+  if (floating && !reduced) {
+    const dest = item.getBoundingClientRect();
+    floating.classList.add('settling');
+    floating.style.top = dest.top + 'px';
+    floating.style.left = dest.left + 'px';
+    let done = false;
+    const end = () => {
+      if (done) return;
+      done = true;
+      finish();
+    };
+    floating.addEventListener('transitionend', end, { once: true });
+    setTimeout(end, 240); // fallback if transitionend never fires
+  } else {
+    finish();
   }
-  dragState = null;
 }
 
 listEl.addEventListener('pointerdown', onHandlePointerDown);
