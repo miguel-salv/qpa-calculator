@@ -21,6 +21,8 @@ const ICONS = {
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>',
   chevron:
     '<svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
+  grip:
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="none"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
 };
 
 function escapeHtml(str) {
@@ -35,7 +37,7 @@ function escapeHtml(str) {
 let semesters = [];
 
 function newSemester(index) {
-  return { id: crypto.randomUUID(), name: `Semester ${index}`, courses: [] };
+  return { id: crypto.randomUUID(), name: `Semester ${index}`, courses: [], collapsed: false };
 }
 
 function load() {
@@ -44,7 +46,12 @@ function load() {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        semesters = parsed;
+        // Back-fill fields added after a user's data was first saved.
+        semesters = parsed.map((s) => ({
+          collapsed: false,
+          ...s,
+          courses: Array.isArray(s.courses) ? s.courses : [],
+        }));
         return;
       }
     }
@@ -111,6 +118,7 @@ function renderSemester(semester, index) {
     semester.courses.length > 0
       ? `<tfoot>
            <tr class="course-total-row">
+             <td class="col-grip" aria-hidden="true"></td>
              <th scope="row" class="col-course">Semester totals</th>
              <td class="col-units tabular-nums" data-total-units></td>
              <td class="col-grade" aria-hidden="true"></td>
@@ -134,9 +142,23 @@ function renderSemester(semester, index) {
          </button>
        </div>`;
 
+  const collapsed = !!semester.collapsed;
+  const bodyId = `semester-body-${sid}`;
+
   return `
-    <div class="card semester-card" data-semester-id="${sid}">
+    <div class="card semester-card${collapsed ? ' is-collapsed' : ''}" data-semester-id="${sid}">
       <div class="semester-header">
+        <button type="button" class="drag-handle semester-drag-handle"
+          data-action="drag-semester" data-semester-id="${sid}"
+          aria-label="Reorder ${escapeHtml(semester.name)} (drag, or use arrow keys)">
+          <span class="icon-slot">${ICONS.grip}</span>
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm semester-collapse-button"
+          data-action="toggle-collapse" data-semester-id="${sid}"
+          aria-expanded="${!collapsed}" aria-controls="${bodyId}"
+          aria-label="${collapsed ? 'Expand' : 'Collapse'} ${escapeHtml(semester.name)}">
+          <span class="collapse-chevron icon-slot">${ICONS.chevron}</span>
+        </button>
         <div class="semester-header-content">
           ${nameBlock}
           <div class="semester-gpa-container">
@@ -150,11 +172,12 @@ function renderSemester(semester, index) {
           <span class="icon-slot">${ICONS.trash}</span>
         </button>
       </div>
-      <div class="card-content">
+      <div class="card-content" id="${bodyId}"${collapsed ? ' hidden' : ''}>
         <table class="course-table">
           <caption class="sr-only">Courses for ${escapeHtml(semester.name)}</caption>
           <thead>
             <tr>
+              <th scope="col" class="col-grip"><span class="sr-only">Reorder</span></th>
               <th scope="col" class="col-course">Course</th>
               <th scope="col" class="col-units">Units</th>
               <th scope="col" class="col-grade">Grade</th>
@@ -186,7 +209,14 @@ function renderCourseRow(semesterId, course) {
   ).join('');
 
   return `
-    <tr class="course-row" data-course-id="${cid}">
+    <tr class="course-row" data-course-id="${cid}" data-semester-id="${sid}">
+      <td class="col-grip" data-label="">
+        <button type="button" class="drag-handle course-drag-handle"
+          data-action="drag-course" data-semester-id="${sid}" data-course-id="${cid}"
+          aria-label="Reorder course ${escapeHtml(course.name || 'row')} (drag, or use arrow keys)">
+          <span class="icon-slot">${ICONS.grip}</span>
+        </button>
+      </td>
       <td class="col-course" data-label="Course">
         <input type="text" class="input course-name-input"
           placeholder="e.g. 15-122 Principles of Imperative Computation…"
@@ -273,10 +303,36 @@ function addSemester() {
 }
 
 function removeSemester(id) {
-  semesters = semesters.filter((s) => s.id !== id);
-  if (semesters.length === 0) semesters = [newSemester(1)];
+  const index = semesters.findIndex((s) => s.id === id);
+  if (index === -1) return;
+  const [removed] = semesters.splice(index, 1);
+
+  // Deleting the last semester leaves a blank placeholder so the app is never
+  // empty; track it so Undo can cleanly remove it when restoring the real one.
+  let placeholderId = null;
+  if (semesters.length === 0) {
+    const placeholder = newSemester(1);
+    placeholderId = placeholder.id;
+    semesters.push(placeholder);
+  }
   save();
   render();
+
+  toast({
+    title: 'Semester deleted',
+    description: removed.name,
+    action: {
+      label: 'Undo',
+      onClick: () => {
+        if (placeholderId) {
+          semesters = semesters.filter((s) => s.id !== placeholderId);
+        }
+        semesters.splice(Math.min(index, semesters.length), 0, removed);
+        save();
+        render();
+      },
+    },
+  });
 }
 
 function addCourse(semesterId) {
@@ -290,7 +346,32 @@ function addCourse(semesterId) {
 function removeCourse(semesterId, courseId) {
   const s = findSemester(semesterId);
   if (!s) return;
-  s.courses = s.courses.filter((c) => c.id !== courseId);
+  const index = s.courses.findIndex((c) => c.id === courseId);
+  if (index === -1) return;
+  const [removed] = s.courses.splice(index, 1);
+  save();
+  render();
+
+  toast({
+    title: 'Course deleted',
+    description: removed.name || 'Untitled course',
+    action: {
+      label: 'Undo',
+      onClick: () => {
+        const target = findSemester(semesterId);
+        if (!target) return; // semester itself was since removed
+        target.courses.splice(Math.min(index, target.courses.length), 0, removed);
+        save();
+        render();
+      },
+    },
+  });
+}
+
+function toggleCollapse(semesterId) {
+  const s = findSemester(semesterId);
+  if (!s) return;
+  s.collapsed = !s.collapsed;
   save();
   render();
 }
@@ -311,7 +392,10 @@ listEl.addEventListener('click', (e) => {
       removeCourse(sid, cid);
       break;
     case 'delete-semester':
-      openDeleteDialog(sid);
+      removeSemester(sid);
+      break;
+    case 'toggle-collapse':
+      toggleCollapse(sid);
       break;
     case 'edit-name': {
       const s = findSemester(sid);
@@ -488,76 +572,190 @@ document.addEventListener('click', (e) => {
   if (openDropdown && !e.target.closest('.grade-select')) closeDropdown();
 });
 
-// ---- Delete confirmation dialog -------------------------------------------
-const dialog = document.getElementById('confirm-dialog');
-const dialogTitle = document.getElementById('dialog-title');
-let pendingDeleteId = null;
+// ---- Drag & keyboard reordering --------------------------------------------
+// Pointer Events give one code path for mouse, touch, and pen. Native HTML5
+// drag-and-drop is deliberately avoided because it doesn't fire on touch.
 
-function openDeleteDialog(semesterId) {
-  const s = findSemester(semesterId);
-  if (!s) return;
-  pendingDeleteId = semesterId;
-  dialogTitle.textContent = `Delete ${s.name}?`;
-  if (typeof dialog.showModal === 'function') {
-    dialog.showModal();
-  } else {
-    // Fallback for very old browsers.
-    if (confirm(`Delete ${s.name}? This cannot be undone.`)) removeSemester(semesterId);
-  }
+// Reorder the `semesters` array to match current DOM order of the cards.
+function commitSemesterOrder() {
+  const ids = Array.from(listEl.querySelectorAll(':scope > .semester-card')).map(
+    (el) => el.dataset.semesterId
+  );
+  semesters.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+  save();
 }
 
-document.getElementById('dialog-cancel').addEventListener('click', () => {
-  pendingDeleteId = null;
-  dialog.close();
-});
-document.getElementById('dialog-confirm').addEventListener('click', () => {
-  if (pendingDeleteId) removeSemester(pendingDeleteId);
-  pendingDeleteId = null;
-  dialog.close();
+// Reorder one semester's courses to match current DOM order within its table.
+function commitCourseOrder(semesterId, tbody) {
+  const s = findSemester(semesterId);
+  if (!s) return;
+  const ids = Array.from(tbody.querySelectorAll(':scope > .course-row')).map(
+    (el) => el.dataset.courseId
+  );
+  s.courses.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+  save();
+}
+
+let dragState = null;
+
+function onHandlePointerDown(e) {
+  const handle = e.target.closest('.drag-handle');
+  if (!handle) return;
+  if (e.button !== undefined && e.button !== 0) return; // primary button / touch only
+
+  const isCourse = handle.dataset.action === 'drag-course';
+  const item = handle.closest(isCourse ? '.course-row' : '.semester-card');
+  if (!item) return;
+  const container = isCourse ? item.parentElement : listEl;
+
+  e.preventDefault();
+  handle.setPointerCapture(e.pointerId);
+
+  dragState = { handle, item, container, isCourse, pointerId: e.pointerId, moved: false };
+  item.classList.add('dragging');
+  document.body.classList.add('is-dragging');
+
+  handle.addEventListener('pointermove', onHandlePointerMove);
+  handle.addEventListener('pointerup', onHandlePointerUp);
+  handle.addEventListener('pointercancel', onHandlePointerUp);
+}
+
+function onHandlePointerMove(e) {
+  if (!dragState) return;
+  const { item, container, isCourse } = dragState;
+  dragState.moved = true;
+
+  const siblingSelector = isCourse ? ':scope > .course-row' : ':scope > .semester-card';
+  const siblings = Array.from(container.querySelectorAll(siblingSelector)).filter(
+    (el) => el !== item
+  );
+
+  // Insert before the first sibling whose vertical midpoint is below the pointer.
+  const y = e.clientY;
+  let inserted = false;
+  for (const sib of siblings) {
+    const rect = sib.getBoundingClientRect();
+    if (y < rect.top + rect.height / 2) {
+      container.insertBefore(item, sib);
+      inserted = true;
+      break;
+    }
+  }
+  if (!inserted) container.appendChild(item);
+}
+
+function onHandlePointerUp() {
+  if (!dragState) return;
+  const { handle, item, container, isCourse, moved } = dragState;
+  handle.removeEventListener('pointermove', onHandlePointerMove);
+  handle.removeEventListener('pointerup', onHandlePointerUp);
+  handle.removeEventListener('pointercancel', onHandlePointerUp);
+  item.classList.remove('dragging');
+  document.body.classList.remove('is-dragging');
+
+  if (moved) {
+    if (isCourse) commitCourseOrder(item.dataset.semesterId, container);
+    else commitSemesterOrder();
+    updateComputedUI();
+  }
+  dragState = null;
+}
+
+listEl.addEventListener('pointerdown', onHandlePointerDown);
+
+// Keyboard reordering: Arrow Up/Down on a focused handle moves the item.
+function moveItemInArray(arr, from, to) {
+  if (to < 0 || to >= arr.length) return false;
+  const [it] = arr.splice(from, 1);
+  arr.splice(to, 0, it);
+  return true;
+}
+
+listEl.addEventListener('keydown', (e) => {
+  const handle = e.target.closest('.drag-handle');
+  if (!handle) return;
+  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+  e.preventDefault();
+  const dir = e.key === 'ArrowUp' ? -1 : 1;
+
+  if (handle.dataset.action === 'drag-semester') {
+    const idx = semesters.findIndex((s) => s.id === handle.dataset.semesterId);
+    if (idx === -1 || !moveItemInArray(semesters, idx, idx + dir)) return;
+    save();
+    render();
+    focusHandle(`.semester-drag-handle[data-semester-id="${cssId(handle.dataset.semesterId)}"]`);
+  } else {
+    const s = findSemester(handle.dataset.semesterId);
+    if (!s) return;
+    const idx = s.courses.findIndex((c) => c.id === handle.dataset.courseId);
+    if (idx === -1 || !moveItemInArray(s.courses, idx, idx + dir)) return;
+    save();
+    render();
+    focusHandle(`.course-drag-handle[data-course-id="${cssId(handle.dataset.courseId)}"]`);
+  }
 });
 
-// ---- Import overwrite confirmation -----------------------------------------
-const importDialog = document.getElementById('import-dialog');
+function focusHandle(selector) {
+  const el = listEl.querySelector(selector);
+  if (el) el.focus();
+}
 
-function confirmOverwrite() {
-  if (typeof importDialog.showModal !== 'function') {
-    return Promise.resolve(
-      confirm('Importing replaces your current semesters and courses. Continue?')
-    );
+// ---- Modal confirmation (import overwrite, clear all) ----------------------
+function confirmViaDialog(dialogId, cancelId, confirmId, fallbackMessage) {
+  const dlg = document.getElementById(dialogId);
+  if (!dlg || typeof dlg.showModal !== 'function') {
+    return Promise.resolve(confirm(fallbackMessage));
   }
   return new Promise((resolve) => {
+    const cancelBtn = document.getElementById(cancelId);
+    const confirmBtn = document.getElementById(confirmId);
     const onCancel = () => finish(false);
     const onConfirm = () => finish(true);
+    const onClose = () => finish(false); // Esc / backdrop counts as cancel
     function finish(result) {
-      importDialog.removeEventListener('close', onClose);
-      document.getElementById('import-cancel').removeEventListener('click', onCancel);
-      document.getElementById('import-confirm').removeEventListener('click', onConfirm);
-      importDialog.close();
+      dlg.removeEventListener('close', onClose);
+      cancelBtn.removeEventListener('click', onCancel);
+      confirmBtn.removeEventListener('click', onConfirm);
+      dlg.close();
       resolve(result);
     }
-    // Esc key / backdrop dismissal counts as cancel.
-    const onClose = () => finish(false);
-    importDialog.addEventListener('close', onClose);
-    document.getElementById('import-cancel').addEventListener('click', onCancel);
-    document.getElementById('import-confirm').addEventListener('click', onConfirm);
-    importDialog.showModal();
+    dlg.addEventListener('close', onClose);
+    cancelBtn.addEventListener('click', onCancel);
+    confirmBtn.addEventListener('click', onConfirm);
+    dlg.showModal();
   });
+}
+
+function confirmOverwrite() {
+  return confirmViaDialog(
+    'import-dialog',
+    'import-cancel',
+    'import-confirm',
+    'Importing replaces your current semesters and courses. Continue?'
+  );
 }
 
 // ---- Toasts ----------------------------------------------------------------
 const toastRegion = document.getElementById('toast-region');
 
-function toast({ title, description, variant }) {
+function toast({ title, description, variant, action }) {
   const el = document.createElement('div');
   const destructive = variant === 'destructive';
   el.className = 'toast' + (destructive ? ' destructive' : '');
   el.setAttribute('role', destructive ? 'alert' : 'status');
-  el.innerHTML = `
+
+  const body = document.createElement('div');
+  body.className = 'toast-body';
+  body.innerHTML = `
     ${title ? `<p class="toast-title">${escapeHtml(title)}</p>` : ''}
     ${description ? `<p class="toast-description">${escapeHtml(description)}</p>` : ''}`;
-  toastRegion.appendChild(el);
+  el.appendChild(body);
+
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  setTimeout(() => {
+  let dismissed = false;
+  const dismiss = () => {
+    if (dismissed) return;
+    dismissed = true;
     if (!reduceMotion) {
       el.style.transition = 'opacity 0.2s';
       el.style.opacity = '0';
@@ -565,11 +763,46 @@ function toast({ title, description, variant }) {
     } else {
       el.remove();
     }
-  }, 5000);
+  };
+
+  if (action && typeof action.onClick === 'function') {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'toast-action';
+    btn.textContent = action.label || 'Undo';
+    btn.addEventListener('click', () => {
+      action.onClick();
+      dismissed = true; // render() will drop this toast; skip the fade.
+      el.remove();
+    });
+    el.appendChild(btn);
+  }
+
+  toastRegion.appendChild(el);
+  // Undo actions get a longer window so keyboard users can reach the button.
+  setTimeout(dismiss, action ? 8000 : 5000);
 }
 
 // ---- Toolbar actions -------------------------------------------------------
 document.getElementById('add-semester-btn').addEventListener('click', addSemester);
+
+const clearAllBtn = document.getElementById('clear-all-btn');
+if (clearAllBtn) {
+  clearAllBtn.addEventListener('click', async () => {
+    if (!hasExistingCourses() && semesters.length <= 1) return;
+    const proceed = await confirmViaDialog(
+      'clear-dialog',
+      'clear-cancel',
+      'clear-confirm',
+      'Delete all semesters and courses? This cannot be undone.'
+    );
+    if (!proceed) return;
+    semesters = [newSemester(1)];
+    save();
+    render();
+    toast({ title: 'All cleared', description: 'Started a fresh calculator.' });
+  });
+}
 
 const fileInput = document.getElementById('file-input');
 const importBtn = document.getElementById('import-btn');

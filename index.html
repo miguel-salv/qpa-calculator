@@ -120,6 +120,14 @@
               <span class="icon-slot" data-icon="plus" aria-hidden="true"></span>
               Add Semester Manually
             </button>
+            <button
+              type="button"
+              id="clear-all-btn"
+              class="btn btn-ghost clear-all-button"
+            >
+              <span class="icon-slot" data-icon="trash" aria-hidden="true"></span>
+              Clear All
+            </button>
           </div>
 
           <div class="semester-scroll-area">
@@ -165,18 +173,18 @@
       </footer>
     </main>
 
-    <!-- Delete confirmation dialog -->
-    <dialog id="confirm-dialog" class="confirm-dialog">
+    <!-- Clear-all confirmation dialog -->
+    <dialog id="clear-dialog" class="confirm-dialog">
       <div class="dialog-content">
-        <h2 class="dialog-title" id="dialog-title"></h2>
+        <h2 class="dialog-title">Delete everything?</h2>
         <p class="dialog-description">
-          This removes the semester and all of its courses. This action cannot
-          be undone.
+          This removes every semester and course and starts a blank calculator.
+          It can't be undone.
         </p>
         <div class="dialog-footer">
-          <button type="button" class="btn btn-outline" id="dialog-cancel">Cancel</button>
-          <button type="button" class="btn btn-default" id="dialog-confirm">
-            Delete Semester
+          <button type="button" class="btn btn-outline" id="clear-cancel">Cancel</button>
+          <button type="button" class="btn btn-default" id="clear-confirm">
+            Delete Everything
           </button>
         </div>
       </div>
