@@ -681,8 +681,9 @@ body {
   z-index: 50;
   top: calc(100% + 4px);
   left: 0;
-  width: 100%;
-  min-width: 8rem;
+  min-width: 100%;
+  width: max-content;
+  max-width: min(18rem, calc(100vw - 2rem));
   max-height: 16rem;
   overflow-y: auto;
   background-color: hsl(var(--card));
@@ -698,7 +699,11 @@ body {
 }
 
 .grade-option {
-  padding: 0.375rem 0.5rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.4375rem 0.5rem;
   border-radius: 0.25rem;
   font-size: 0.875rem;
   cursor: pointer;
@@ -709,9 +714,55 @@ body {
   background-color: hsl(var(--hover-surface));
   color: hsl(var(--foreground));
 }
-.grade-option[aria-selected="true"] {
+.grade-option[aria-selected="true"] .grade-code {
   font-weight: 600;
   color: hsl(var(--primary));
+}
+.grade-code {
+  flex-shrink: 0;
+  min-width: 2rem;
+}
+.grade-hint {
+  font-size: 0.75rem;
+  color: var(--color-muted-foreground);
+}
+.grade-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  padding: 0.4375rem 0.5rem;
+  border-top: 1px solid hsl(var(--border));
+  border-radius: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+  user-select: none;
+}
+.grade-group-toggle:hover,
+.grade-group-toggle.active {
+  background-color: hsl(var(--hover-surface));
+  color: hsl(var(--foreground));
+}
+.grade-toggle-label {
+  font-weight: 600;
+}
+.grade-group-toggle .chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: transform 0.18s ease;
+}
+.grade-group-toggle[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+.grade-subgroup {
+  list-style: none;
+  margin: 0.125rem 0 0;
+  padding: 0;
+}
+.grade-subgroup[hidden] {
+  display: none;
 }
 
 .confirm-dialog {

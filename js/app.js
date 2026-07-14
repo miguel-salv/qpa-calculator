@@ -220,12 +220,30 @@ function renderCourseRow(semesterId, course) {
   const sid = escapeHtml(semesterId);
   const cid = escapeHtml(course.id);
   const missing = course.grade === 'NO_GRADE';
-  const options = GRADE_OPTIONS.map(
-    (opt) =>
-      `<li class="grade-option" role="option" id="grade-opt-${cid}-${escapeHtml(opt.value)}"
+  const isNonFactored = (opt) => opt.points === null && opt.value !== 'NO_GRADE';
+  const renderOption = (opt) => {
+    const hint = opt.hint
+      ? ` <span class="grade-hint">${escapeHtml(opt.hint)}</span>`
+      : '';
+    return `<li class="grade-option grade-nav-item" role="option" id="grade-opt-${cid}-${escapeHtml(opt.value)}"
          data-value="${escapeHtml(opt.value)}"
-         aria-selected="${opt.value === course.grade}">${escapeHtml(opt.label)}</li>`
-  ).join('');
+         aria-selected="${opt.value === course.grade}"><span class="grade-code">${escapeHtml(
+      opt.label
+    )}</span>${hint}</li>`;
+  };
+  const factored = GRADE_OPTIONS.filter((opt) => !isNonFactored(opt)).map(renderOption).join('');
+  const nonFactored = GRADE_OPTIONS.filter(isNonFactored).map(renderOption).join('');
+  const expanded = isNonFactored({ points: gradePoints(course.grade), value: course.grade });
+  const options = `${factored}<li class="grade-group" role="presentation">
+        <div class="grade-group-toggle grade-nav-item" role="button" tabindex="-1"
+          data-action="grade-group-toggle" aria-expanded="${expanded}">
+          <span class="grade-toggle-label">No QPA impact</span>
+          ${ICONS.chevron}
+        </div>
+        <ul class="grade-subgroup" role="group" aria-label="Grades with no QPA impact"${
+          expanded ? '' : ' hidden'
+        }>${nonFactored}</ul>
+      </li>`;
 
   return `
     <tr class="course-row" data-course-id="${cid}" data-semester-id="${sid}">
@@ -479,6 +497,15 @@ function toggleDropdown(wrapper) {
     const trigger = wrapper.querySelector('.course-grade-select');
     box.hidden = false;
     trigger.setAttribute('aria-expanded', 'true');
+    // Expand the group only when the current grade lives inside it.
+    const group = box.querySelector('.grade-group');
+    if (group) {
+      const sub = group.querySelector('.grade-subgroup');
+      const toggle = group.querySelector('.grade-group-toggle');
+      const selectedInGroup = !!sub.querySelector('[aria-selected="true"]');
+      sub.hidden = !selectedInGroup;
+      toggle.setAttribute('aria-expanded', String(selectedInGroup));
+    }
     const selected = box.querySelector('[aria-selected="true"]') || box.firstElementChild;
     setActiveOption(box, selected);
   }
@@ -491,17 +518,33 @@ function closeDropdown() {
   box.hidden = true;
   trigger.setAttribute('aria-expanded', 'false');
   trigger.removeAttribute('aria-activedescendant');
-  box.querySelectorAll('.grade-option.active').forEach((o) => o.classList.remove('active'));
+  box.querySelectorAll('.grade-nav-item.active').forEach((o) => o.classList.remove('active'));
   openDropdown = null;
 }
 
 function setActiveOption(box, option) {
   if (!option) return;
-  box.querySelectorAll('.grade-option.active').forEach((o) => o.classList.remove('active'));
+  box.querySelectorAll('.grade-nav-item.active').forEach((o) => o.classList.remove('active'));
   option.classList.add('active');
   option.scrollIntoView({ block: 'nearest' });
   const trigger = box.closest('.grade-select').querySelector('.course-grade-select');
   if (option.id) trigger.setAttribute('aria-activedescendant', option.id);
+  else trigger.removeAttribute('aria-activedescendant');
+}
+
+function navItems(box) {
+  return Array.from(box.querySelectorAll('.grade-nav-item')).filter(
+    (el) => !el.closest('[hidden]')
+  );
+}
+
+function toggleGradeGroup(toggle) {
+  const group = toggle.closest('.grade-group');
+  const sub = group.querySelector('.grade-subgroup');
+  const nowExpanded = sub.hidden;
+  sub.hidden = !nowExpanded;
+  toggle.setAttribute('aria-expanded', String(nowExpanded));
+  return nowExpanded;
 }
 
 function selectGrade(wrapper, value) {
@@ -524,6 +567,20 @@ function selectGrade(wrapper, value) {
 }
 
 listEl.addEventListener('click', (e) => {
+  const toggle = e.target.closest('.grade-group-toggle');
+  if (toggle) {
+    const expanded = toggleGradeGroup(toggle);
+    if (expanded) {
+      const box = toggle.closest('.grade-listbox');
+      const firstSub = toggle
+        .closest('.grade-group')
+        .querySelector('.grade-subgroup .grade-option');
+      setActiveOption(box, firstSub);
+    } else {
+      setActiveOption(toggle.closest('.grade-listbox'), toggle);
+    }
+    return;
+  }
   const opt = e.target.closest('.grade-option');
   if (opt) {
     const wrapper = opt.closest('.grade-select');
@@ -542,8 +599,8 @@ listEl.addEventListener('keydown', (e) => {
   }
   if (!openDropdown) return;
   const box = openDropdown.querySelector('.grade-listbox');
-  const options = Array.from(box.querySelectorAll('.grade-option'));
-  const current = box.querySelector('.grade-option.active');
+  const options = navItems(box);
+  const current = box.querySelector('.grade-nav-item.active');
   let idx = options.indexOf(current);
 
   if (e.key === 'ArrowDown') {
@@ -554,7 +611,18 @@ listEl.addEventListener('keydown', (e) => {
     setActiveOption(box, options[Math.max(idx - 1, 0)]);
   } else if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault();
-    if (current) selectGrade(openDropdown, current.dataset.value);
+    if (!current) return;
+    if (current.classList.contains('grade-group-toggle')) {
+      const expanded = toggleGradeGroup(current);
+      if (expanded) {
+        const firstSub = current
+          .closest('.grade-group')
+          .querySelector('.grade-subgroup .grade-option');
+        setActiveOption(box, firstSub || current);
+      }
+    } else {
+      selectGrade(openDropdown, current.dataset.value);
+    }
   } else if (e.key === 'Escape') {
     e.preventDefault();
     const trig = openDropdown.querySelector('.course-grade-select');
