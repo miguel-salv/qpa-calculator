@@ -116,6 +116,9 @@ function save() {
 
 const formatQpa = (qpa) => (qpa === null ? '—' : qpa.toFixed(2));
 
+const formatUnits = (units) =>
+  Number.isInteger(units) ? String(units) : String(parseFloat(units.toFixed(1)));
+
 function gradeLabel(value) {
   const opt = GRADE_OPTIONS.find((o) => o.value === value);
   return opt ? opt.label : 'No Grade';
@@ -301,6 +304,13 @@ function updateComputedUI() {
 
   const cumulative = computeTotals(semesters.flatMap((s) => s.courses));
   document.getElementById('cumulative-qpa').textContent = formatQpa(cumulative.qpa);
+  const unitsEl = document.getElementById('cumulative-units');
+  if (unitsEl) {
+    unitsEl.textContent =
+      cumulative.factorableUnits > 0
+        ? `${formatUnits(cumulative.factorableUnits)} units counted`
+        : '';
+  }
 }
 
 function cssId(id) {
@@ -1046,11 +1056,15 @@ function hasExistingCourses() {
   return semesters.some((s) => s.courses.length > 0);
 }
 
-function setImporting(isImporting) {
+function setImporting(isImporting, progressText) {
   importBtn.disabled = isImporting;
   const label = importBtn.childNodes[importBtn.childNodes.length - 1];
   if (label && label.nodeType === Node.TEXT_NODE) {
-    label.textContent = isImporting ? ' Importing…' : ' Import from Academic Record';
+    if (!isImporting) {
+      label.textContent = ' Import from Academic Record';
+    } else {
+      label.textContent = progressText ? ` ${progressText}` : ' Importing…';
+    }
   }
 }
 
@@ -1069,14 +1083,14 @@ fileInput.addEventListener('change', async (event) => {
   setImporting(true);
   try {
     if (!file.name.toLowerCase().endsWith('.pdf')) {
-      throw new Error('That file isn’t a PDF. Choose your CMU academic record PDF and try again.');
+      throw new Error('That file isn’t a PDF.');
     }
     const { parseCMUTranscript } = await import('./transcript.js');
-    const parsed = await parseCMUTranscript(file);
+    const parsed = await parseCMUTranscript(file, (page, total) => {
+      setImporting(true, total > 1 ? `Reading page ${page} of ${total}…` : 'Reading…');
+    });
     if (parsed.length === 0) {
-      throw new Error(
-        'No courses found in that PDF. Export your academic record from SIO and import that file.'
-      );
+      throw new Error('No courses found in that PDF.');
     }
     const newSemesters = parsed.map((sem, i) => ({
       id: crypto.randomUUID(),
@@ -1090,9 +1104,7 @@ fileInput.addEventListener('change', async (event) => {
       })),
     }));
     if (newSemesters.some((sem) => sem.courses.length === 0)) {
-      throw new Error(
-        'One or more semesters came through empty. Re-export the academic record and try again.'
-      );
+      throw new Error('Some semesters came through empty.');
     }
     mutate(() => {
       semesters = newSemesters;
@@ -1102,11 +1114,27 @@ fileInput.addEventListener('change', async (event) => {
       (acc, sem) => acc + sem.courses.filter((c) => c.grade === 'NO_GRADE').length,
       0
     );
+    const duplicates = newSemesters.reduce((acc, sem) => {
+      const seen = new Set();
+      let dupes = 0;
+      for (const c of sem.courses) {
+        const key = c.name.split(':')[0].trim().toLowerCase();
+        if (!key) continue;
+        if (seen.has(key)) dupes += 1;
+        else seen.add(key);
+      }
+      return acc + dupes;
+    }, 0);
     let description = `Loaded ${newSemesters.length} semesters, ${courseCount} courses.`;
     if (needGrade > 0) {
       description += ` ${needGrade} ${
         needGrade === 1 ? 'needs' : 'need'
       } a grade.`;
+    }
+    if (duplicates > 0) {
+      description += ` ${duplicates} possible ${
+        duplicates === 1 ? 'duplicate' : 'duplicates'
+      } — please review.`;
     }
     toast({
       title: 'Import complete',
@@ -1118,9 +1146,7 @@ fileInput.addEventListener('change', async (event) => {
     toast({
       title: 'Import failed',
       description:
-        error instanceof Error
-          ? error.message
-          : 'Couldn’t read that academic record. Check the file and try again.',
+        error instanceof Error ? error.message : 'Couldn’t read that PDF.',
       variant: 'destructive',
     });
   } finally {

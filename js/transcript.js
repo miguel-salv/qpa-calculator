@@ -14,7 +14,7 @@ function initWorker() {
   }
 }
 
-export async function parseCMUTranscript(file) {
+export async function parseCMUTranscript(file, onProgress) {
   if (!file) throw new Error('No file provided');
   initWorker();
   const data = new Uint8Array(await file.arrayBuffer());
@@ -23,6 +23,7 @@ export async function parseCMUTranscript(file) {
 
   const allTextItems = [];
   for (let i = 1; i <= pdf.numPages; i++) {
+    if (typeof onProgress === 'function') onProgress(i, pdf.numPages);
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
     const items = content.items
