@@ -69,6 +69,11 @@ body {
   padding: 0;
 }
 
+html {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(0 0% 72%) transparent;
+}
+
 body {
   width: 100%;
   font-family: "Geist", Arial, Helvetica, sans-serif;
@@ -474,15 +479,52 @@ body {
   /* Contains overflow so it doesn't add a stray page scrollbar */
   position: relative;
   overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
   overscroll-behavior: contain;
   background-color: hsl(var(--card));
+}
+
+/* Width: page scrollbar slightly wider than inner */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 8px;
+}
+.semester-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* Shared appearance for page + inner scroll areas */
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+.semester-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+/* Inner scroll area sits on the light card, so a light thumb reads fine */
+.semester-scroll-area::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 999px;
+}
+.semester-scroll-area::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground));
+}
+/* Page scrollbar sits on the darker page bg, so use a darker thumb for contrast */
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background-color: hsl(0 0% 72%);
+  border-radius: 999px;
+}
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(0 0% 58%);
 }
 
 .semester-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1rem;
+  padding: 1rem 0.25rem;
 }
 
 .semester-card {
@@ -978,6 +1020,11 @@ body {
     min-width: 0;
     flex: 1;
   }
+  .course-table td.col-grade,
+  .course-table td.col-units {
+    width: auto;
+    min-width: 0;
+  }
   .course-table td.col-actions {
     grid-row: 1;
     grid-column: 4;
@@ -990,7 +1037,7 @@ body {
   }
   .course-table td.col-grade {
     grid-row: 2;
-    grid-column: 3 / 5;
+    grid-column: 3 / 4;
   }
   .course-name-input,
   .course-units-input,
