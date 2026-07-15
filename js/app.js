@@ -4,21 +4,21 @@ const STORAGE_KEY = 'semesters';
 
 const ICONS = {
   upload:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+    '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
   plus:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
   trash:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+    '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
   pencil:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+    '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
   mail:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+    '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
   github:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>',
+    '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>',
   chevron:
-    '<svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
+    '<svg class="chevron" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
   grip:
-    '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="none"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
+    '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="none"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
 };
 
 function escapeHtml(str) {
@@ -39,6 +39,8 @@ let focusCourseId = null;
 
 // Transient (not persisted): course ids the user has explicitly expanded on mobile.
 const expandedCourses = new Set();
+// Transient (not persisted): course ids the user has explicitly collapsed on mobile.
+const collapsedCourses = new Set();
 
 function isCourseFilled(c) {
   return c.units !== '' && c.grade !== 'NO_GRADE';
@@ -264,21 +266,26 @@ function renderCourseRow(semesterId, course) {
       </li>`;
 
   const filled = isCourseFilled(course);
-  const summary = filled && !expandedCourses.has(course.id);
+  // Filled courses collapse by default; any course can be explicitly collapsed.
+  const summary = collapsedCourses.has(course.id) || (filled && !expandedCourses.has(course.id));
   const rowClasses = ['course-row'];
   if (filled) rowClasses.push('is-filled');
   if (summary) rowClasses.push('is-summary');
   const summaryName = course.name.trim() || 'Untitled course';
-  const summaryMeta = `${escapeHtml(String(course.units))} · ${escapeHtml(gradeLabel(course.grade))}`;
+  const metaParts = [];
+  if (course.units !== '') metaParts.push(escapeHtml(String(course.units)));
+  if (course.grade !== 'NO_GRADE') metaParts.push(escapeHtml(gradeLabel(course.grade)));
+  const summaryMeta = metaParts.join(' · ') || 'No grade yet';
 
   return `
     <tr class="${rowClasses.join(' ')}" data-course-id="${cid}" data-semester-id="${sid}">
-      <td class="col-summary" data-action="expand-course"
-        data-semester-id="${sid}" data-course-id="${cid}"
-        role="button" tabindex="0" aria-expanded="false"
-        aria-label="Edit ${escapeHtml(summaryName)}">
-        <span class="summary-name">${escapeHtml(summaryName)}</span>
-        <span class="summary-meta tabular-nums">${summaryMeta}</span>
+      <td class="col-summary">
+        <button type="button" class="summary-trigger" data-action="expand-course"
+          data-semester-id="${sid}" data-course-id="${cid}"
+          aria-expanded="false" aria-label="Expand ${escapeHtml(summaryName)}">
+          <span class="summary-name">${escapeHtml(summaryName)}</span>
+          <span class="summary-meta tabular-nums">${summaryMeta}</span>
+        </button>
       </td>
       <td class="col-grip" data-label="">
         <button type="button" class="drag-handle course-drag-handle"
@@ -289,6 +296,7 @@ function renderCourseRow(semesterId, course) {
         <button type="button" class="btn btn-ghost btn-sm course-collapse-button${summary ? '' : ' is-open'}"
           data-action="${summary ? 'expand-course' : 'collapse-course'}"
           data-semester-id="${sid}" data-course-id="${cid}"
+          aria-expanded="${summary ? 'false' : 'true'}"
           aria-label="${summary ? 'Expand' : 'Collapse'} ${escapeHtml(summaryName)}">
           <span class="collapse-chevron icon-slot">${ICONS.chevron}</span>
         </button>
@@ -452,9 +460,11 @@ listEl.addEventListener('click', (e) => {
       break;
     case 'expand-course':
       expandedCourses.add(cid);
+      collapsedCourses.delete(cid);
       render();
       break;
     case 'collapse-course':
+      collapsedCourses.add(cid);
       expandedCourses.delete(cid);
       render();
       break;
@@ -465,9 +475,10 @@ listEl.addEventListener('click', (e) => {
 
 listEl.addEventListener('keydown', (e) => {
   const cell = e.target.closest('[data-action="expand-course"]');
-  if (cell && (e.key === 'Enter' || e.key === ' ')) {
+  if (cell && cell.tagName !== 'BUTTON' && (e.key === 'Enter' || e.key === ' ')) {
     e.preventDefault();
     expandedCourses.add(cell.dataset.courseId);
+    collapsedCourses.delete(cell.dataset.courseId);
     render();
   }
 });
