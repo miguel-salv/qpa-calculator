@@ -37,6 +37,13 @@ let redoStack = [];
 let editSessionOpen = false;
 let focusCourseId = null;
 
+// Transient (not persisted): course ids the user has explicitly expanded on mobile.
+const expandedCourses = new Set();
+
+function isCourseFilled(c) {
+  return c.units !== '' && c.grade !== 'NO_GRADE';
+}
+
 function snapshot() {
   return semesters.map((s) => ({
     id: s.id,
@@ -256,13 +263,34 @@ function renderCourseRow(semesterId, course) {
         }>${nonFactored}</ul>
       </li>`;
 
+  const filled = isCourseFilled(course);
+  const summary = filled && !expandedCourses.has(course.id);
+  const rowClasses = ['course-row'];
+  if (filled) rowClasses.push('is-filled');
+  if (summary) rowClasses.push('is-summary');
+  const summaryName = course.name.trim() || 'Untitled course';
+  const summaryMeta = `${escapeHtml(String(course.units))} · ${escapeHtml(gradeLabel(course.grade))}`;
+
   return `
-    <tr class="course-row" data-course-id="${cid}" data-semester-id="${sid}">
+    <tr class="${rowClasses.join(' ')}" data-course-id="${cid}" data-semester-id="${sid}">
+      <td class="col-summary" data-action="expand-course"
+        data-semester-id="${sid}" data-course-id="${cid}"
+        role="button" tabindex="0" aria-expanded="false"
+        aria-label="Edit ${escapeHtml(summaryName)}">
+        <span class="summary-name">${escapeHtml(summaryName)}</span>
+        <span class="summary-meta tabular-nums">${summaryMeta}</span>
+      </td>
       <td class="col-grip" data-label="">
         <button type="button" class="drag-handle course-drag-handle"
           data-action="drag-course" data-semester-id="${sid}" data-course-id="${cid}"
           aria-label="Reorder course ${escapeHtml(course.name || 'row')} (drag, or use arrow keys)">
           <span class="icon-slot">${ICONS.grip}</span>
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm course-collapse-button${summary ? '' : ' is-open'}"
+          data-action="${summary ? 'expand-course' : 'collapse-course'}"
+          data-semester-id="${sid}" data-course-id="${cid}"
+          aria-label="${summary ? 'Expand' : 'Collapse'} ${escapeHtml(summaryName)}">
+          <span class="collapse-chevron icon-slot">${ICONS.chevron}</span>
         </button>
       </td>
       <td class="col-course" data-label="Course">
@@ -422,8 +450,25 @@ listEl.addEventListener('click', (e) => {
     case 'grade-toggle':
       toggleDropdown(el.closest('.grade-select'));
       break;
+    case 'expand-course':
+      expandedCourses.add(cid);
+      render();
+      break;
+    case 'collapse-course':
+      expandedCourses.delete(cid);
+      render();
+      break;
     default:
       break;
+  }
+});
+
+listEl.addEventListener('keydown', (e) => {
+  const cell = e.target.closest('[data-action="expand-course"]');
+  if (cell && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    expandedCourses.add(cell.dataset.courseId);
+    render();
   }
 });
 
