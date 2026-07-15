@@ -360,7 +360,9 @@ function addCourse(semesterId) {
   const s = findSemester(semesterId);
   if (!s) return;
   const newId = crypto.randomUUID();
-  focusCourseId = newId;
+  // On mobile, skip auto-focusing the name input so the soft keyboard
+  // doesn't spring open the moment a course is added.
+  if (!window.matchMedia('(max-width: 639px)').matches) focusCourseId = newId;
   mutate(() => {
     s.courses.push({ id: newId, name: '', units: '', grade: 'NO_GRADE' });
   });
