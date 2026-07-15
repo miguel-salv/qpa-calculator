@@ -658,12 +658,6 @@ body {
   margin-top: 0.75rem;
 }
 
-/* Mobile-only course summary controls: hidden on desktop */
-.col-summary,
-.course-collapse-button {
-  display: none;
-}
-
 .qpa-result {
   text-align: center;
   display: flex;
@@ -975,9 +969,6 @@ body {
   .course-table tbody td.col-actions::before {
     content: none;
   }
-  .course-table tbody tr.course-row:not(.is-summary) > td.col-summary {
-    display: none;
-  }
   .course-name-input,
   .course-units-input,
   .course-grade-select {
@@ -1017,101 +1008,6 @@ body {
   .semester-edit-button {
     height: 1.75rem;
     width: 1.75rem;
-  }
-
-  /* Collapsed summary view for filled course rows */
-  .course-table tbody tr.course-row.is-summary {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.4375rem 0.5rem;
-  }
-  .course-table tbody tr.course-row.is-summary > td.col-course,
-  .course-table tbody tr.course-row.is-summary > td.col-units,
-  .course-table tbody tr.course-row.is-summary > td.col-grade {
-    display: none;
-  }
-  .course-table tbody tr.course-row.is-summary > td.col-grip {
-    display: flex;
-    order: 0;
-    flex: 0 0 auto;
-    grid-row: auto;
-    grid-column: auto;
-  }
-  .course-table tbody tr.course-row.is-summary > td.col-summary {
-    display: flex;
-    order: 1;
-    flex: 1;
-    min-width: 0;
-    padding: 0;
-  }
-  .course-table tbody tr.course-row.is-summary > td.col-summary::before {
-    content: none;
-  }
-  .summary-trigger {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-    min-width: 0;
-    min-height: var(--control-size);
-    padding: 0;
-    border: none;
-    background: none;
-    font-family: inherit;
-    color: inherit;
-    text-align: left;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .summary-trigger:focus-visible {
-    outline: none;
-    border-radius: var(--radius-control);
-    box-shadow: var(--focus-ring);
-  }
-  .course-table tbody tr.course-row.is-summary > td.col-actions {
-    display: flex;
-    order: 2;
-    flex: 0 0 auto;
-    grid-row: auto;
-    grid-column: auto;
-  }
-  .summary-name {
-    flex: 0 1 auto;
-    min-width: 0;
-    font-weight: 600;
-    font-size: var(--text-md);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .summary-meta {
-    flex: 0 0 auto;
-    margin-left: auto;
-    font-size: var(--text-sm);
-    color: var(--color-muted-foreground);
-    white-space: nowrap;
-  }
-  /* Show the collapse/expand chevron on every course row */
-  .course-table tbody tr.course-row .course-collapse-button {
-    display: inline-flex;
-    height: var(--control-size);
-    width: var(--control-size);
-    padding: 0;
-    flex-shrink: 0;
-    border-radius: var(--radius-control);
-    opacity: 0.7;
-  }
-  .course-collapse-button:hover {
-    opacity: 1;
-  }
-  .course-collapse-button .collapse-chevron svg {
-    transition: transform var(--transition) ease;
-    transform-box: fill-box;
-    transform-origin: center;
-  }
-  .course-collapse-button.is-open .collapse-chevron svg {
-    transform: rotate(180deg);
   }
 }
 

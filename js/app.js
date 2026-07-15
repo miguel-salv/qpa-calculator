@@ -37,15 +37,6 @@ let redoStack = [];
 let editSessionOpen = false;
 let focusCourseId = null;
 
-// Transient (not persisted): course ids the user has explicitly expanded on mobile.
-const expandedCourses = new Set();
-// Transient (not persisted): course ids the user has explicitly collapsed on mobile.
-const collapsedCourses = new Set();
-
-function isCourseFilled(c) {
-  return c.units !== '' && c.grade !== 'NO_GRADE';
-}
-
 function snapshot() {
   return semesters.map((s) => ({
     id: s.id,
@@ -265,40 +256,13 @@ function renderCourseRow(semesterId, course) {
         }>${nonFactored}</ul>
       </li>`;
 
-  const filled = isCourseFilled(course);
-  // Filled courses collapse by default; any course can be explicitly collapsed.
-  const summary = collapsedCourses.has(course.id) || (filled && !expandedCourses.has(course.id));
-  const rowClasses = ['course-row'];
-  if (filled) rowClasses.push('is-filled');
-  if (summary) rowClasses.push('is-summary');
-  const summaryName = course.name.trim() || 'Untitled course';
-  const metaParts = [];
-  if (course.units !== '') metaParts.push(escapeHtml(String(course.units)));
-  if (course.grade !== 'NO_GRADE') metaParts.push(escapeHtml(gradeLabel(course.grade)));
-  const summaryMeta = metaParts.join(' · ') || 'No grade yet';
-
   return `
-    <tr class="${rowClasses.join(' ')}" data-course-id="${cid}" data-semester-id="${sid}">
-      <td class="col-summary">
-        <button type="button" class="summary-trigger" data-action="expand-course"
-          data-semester-id="${sid}" data-course-id="${cid}"
-          aria-expanded="false" aria-label="Expand ${escapeHtml(summaryName)}">
-          <span class="summary-name">${escapeHtml(summaryName)}</span>
-          <span class="summary-meta tabular-nums">${summaryMeta}</span>
-        </button>
-      </td>
+    <tr class="course-row" data-course-id="${cid}" data-semester-id="${sid}">
       <td class="col-grip" data-label="">
         <button type="button" class="drag-handle course-drag-handle"
           data-action="drag-course" data-semester-id="${sid}" data-course-id="${cid}"
           aria-label="Reorder course ${escapeHtml(course.name || 'row')} (drag, or use arrow keys)">
           <span class="icon-slot">${ICONS.grip}</span>
-        </button>
-        <button type="button" class="btn btn-ghost btn-sm course-collapse-button${summary ? '' : ' is-open'}"
-          data-action="${summary ? 'expand-course' : 'collapse-course'}"
-          data-semester-id="${sid}" data-course-id="${cid}"
-          aria-expanded="${summary ? 'false' : 'true'}"
-          aria-label="${summary ? 'Expand' : 'Collapse'} ${escapeHtml(summaryName)}">
-          <span class="collapse-chevron icon-slot">${ICONS.chevron}</span>
         </button>
       </td>
       <td class="col-course" data-label="Course">
@@ -458,28 +422,8 @@ listEl.addEventListener('click', (e) => {
     case 'grade-toggle':
       toggleDropdown(el.closest('.grade-select'));
       break;
-    case 'expand-course':
-      expandedCourses.add(cid);
-      collapsedCourses.delete(cid);
-      render();
-      break;
-    case 'collapse-course':
-      collapsedCourses.add(cid);
-      expandedCourses.delete(cid);
-      render();
-      break;
     default:
       break;
-  }
-});
-
-listEl.addEventListener('keydown', (e) => {
-  const cell = e.target.closest('[data-action="expand-course"]');
-  if (cell && cell.tagName !== 'BUTTON' && (e.key === 'Enter' || e.key === ' ')) {
-    e.preventDefault();
-    expandedCourses.add(cell.dataset.courseId);
-    collapsedCourses.delete(cell.dataset.courseId);
-    render();
   }
 });
 
