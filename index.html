@@ -28,7 +28,7 @@
     <meta property="og:site_name" content="CMU QPA Calculator" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/android-chrome-192x192.png" />
+    <meta property="og:image" content="https://cmu-qpa.pages.dev/android-chrome-192x192.png" />
 
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="CMU QPA Calculator" />
@@ -36,20 +36,13 @@
       name="twitter:description"
       content="Calculate your QPA (Quality Point Average) for CMU courses."
     />
-    <meta name="twitter:image" content="/android-chrome-192x192.png" />
+    <meta name="twitter:image" content="https://cmu-qpa.pages.dev/android-chrome-192x192.png" />
 
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
     <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
 
     <link rel="stylesheet" href="css/styles.css" />
 
@@ -146,20 +139,31 @@
               <div class="space-y-2">
                 <p class="footer-text">
                   An independent tool, not affiliated with or endorsed by
-                  Carnegie Mellon University
+                  Carnegie Mellon University.
                 </p>
-                <p class="footer-copyright" id="copyright"></p>
+                <p class="footer-meta">
+                  <span class="footer-copyright" id="copyright"></span>
+                  <span class="footer-meta-sep" aria-hidden="true">·</span>
+                  <a href="/privacy.html" class="footer-link footer-meta-link"
+                    >Privacy Policy</a
+                  >
+                </p>
               </div>
             </div>
             <div class="footer-section">
               <h4 class="footer-subheading">Created by</h4>
               <p class="footer-text">Miguel Salvacion</p>
               <div class="footer-contact">
-                <a href="mailto:msalvaci@andrew.cmu.edu" class="footer-link">
+                <a href="mailto:msalvacion@cmu.edu" class="footer-link">
                   <span class="footer-icon icon-slot" data-icon="mail" aria-hidden="true"></span>
-                  <span>msalvaci@andrew.cmu.edu</span>
+                  <span>msalvacion@cmu.edu</span>
                 </a>
-                <a href="https://github.com/miguel-salv/qpa-calculator" class="footer-link">
+                <a
+                  href="https://github.com/miguel-salv/qpa-calculator"
+                  class="footer-link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <span class="footer-icon icon-slot" data-icon="github" aria-hidden="true"></span>
                   <span>View on GitHub</span>
                 </a>
@@ -174,7 +178,7 @@
       <div class="dialog-content">
         <h2 class="dialog-title">Delete everything?</h2>
         <p class="dialog-description">
-          This removes every semester and course. You can undo it with Ctrl+Z or
+          This removes every semester and course. You can undo it with Ctrl/Cmd+Z or
           the Undo button afterward.
         </p>
         <div class="dialog-footer">
@@ -191,7 +195,7 @@
         <h2 class="dialog-title">Replace your current courses?</h2>
         <p class="dialog-description">
           Importing your academic record replaces every semester and course you
-          have now. You can undo it with Ctrl+Z or the Undo button afterward.
+          have now. You can undo it with Ctrl/Cmd+Z or the Undo button afterward.
         </p>
         <div class="dialog-footer">
           <button type="button" class="btn btn-outline" id="import-cancel">Cancel</button>

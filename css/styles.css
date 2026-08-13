@@ -1,3 +1,19 @@
+@font-face {
+  font-family: "Geist";
+  src: url("../fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("../fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: 0 0% 96.1%; /* #F0F0F0 */
   --foreground: 0 0% 3.9%;
@@ -312,10 +328,9 @@ body {
 
 .footer-section {
   max-width: 20rem;
-  margin-bottom: 1rem;
-}
-.footer-section > div {
-  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .footer-heading {
@@ -328,7 +343,7 @@ body {
 .footer-subheading {
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
-  margin: 0 0 0.5rem;
+  margin: 0;
 }
 
 .footer-text {
@@ -338,10 +353,24 @@ body {
   margin: 0;
 }
 
-.footer-copyright {
+.footer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
   font-size: var(--text-base);
   color: rgba(255, 255, 255, 0.85);
+}
+
+.footer-copyright {
+  font-size: inherit;
+  color: inherit;
   margin: 0;
+}
+
+.footer-meta-sep {
+  opacity: 0.7;
 }
 
 .footer-contact {
@@ -360,9 +389,27 @@ body {
   width: fit-content;
   font-size: var(--text-base);
   text-decoration: none;
+  border-radius: var(--radius-control);
 }
 .footer-link:hover {
   color: white;
+}
+.footer-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(348 83% 42%), 0 0 0 4px rgba(255, 255, 255, 0.9);
+}
+
+.footer-meta-link {
+  display: inline-block;
+  padding: 0;
+  color: inherit;
+}
+.footer-meta-link:hover {
+  color: white;
+}
+
+.footer-meta-current {
+  color: inherit;
 }
 
 .footer-icon {
@@ -371,12 +418,85 @@ body {
   opacity: 0.7;
   transition: opacity var(--transition);
 }
+.footer-icon svg {
+  height: 0.875rem;
+  width: 0.875rem;
+}
 .footer-link:hover .footer-icon {
   opacity: 1;
 }
 
 .space-y-2 > * + * {
   margin-top: 0.5rem;
+}
+
+.legal-viewport {
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  flex: 1;
+}
+
+.legal-back {
+  margin: 0 0 1rem;
+}
+
+.legal-back-link {
+  color: var(--color-primary);
+  font-size: var(--text-base);
+  font-weight: 500;
+  text-decoration: none;
+}
+.legal-back-link:hover {
+  text-decoration: underline;
+}
+.legal-back-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-control);
+}
+
+.legal-content {
+  color: hsl(var(--foreground));
+  font-size: var(--text-md);
+  line-height: 1.6;
+}
+
+.legal-content h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 2rem 0 0.75rem;
+}
+
+.legal-content p {
+  margin: 0 0 1rem;
+  color: hsl(var(--foreground) / 0.92);
+}
+
+.legal-content a {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.legal-content a:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-control);
+}
+
+.legal-updated {
+  font-size: var(--text-sm);
+  color: var(--color-muted-foreground);
+  font-weight: 500;
+}
+
+@media (min-width: 768px) {
+  .legal-viewport {
+    padding-top: 3rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
 }
 
 @media (min-width: 768px) {
@@ -524,7 +644,7 @@ body::-webkit-scrollbar-thumb:hover {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1rem 0.25rem;
+  padding: 1rem;
 }
 
 .semester-card {
