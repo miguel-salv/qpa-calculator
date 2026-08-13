@@ -24,7 +24,7 @@
   --secondary: 0 0% 96.1%;
   --secondary-foreground: 0 0% 9%;
   --muted: 0 0% 96.1%;
-  --muted-foreground: 0 0% 45.1%;
+  --muted-foreground: 0 0% 38%; /* darker for WCAG AA on #F0F0F0 / white cards */
   --accent: 48 100% 50%; /* Gold #FFC107 */
   --accent-foreground: 0 0% 9%;
   --destructive: 0 84.2% 60.2%;
@@ -57,7 +57,7 @@
 
   --color-primary: hsl(348 83% 42%);
   --color-primary-rgb: 196, 18, 48;
-  --color-muted-foreground: hsl(0 0% 45.1%);
+  --color-muted-foreground: hsl(0 0% 38%);
   --color-border: hsl(0 0% 89.8%);
 
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
